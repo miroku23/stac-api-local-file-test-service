@@ -32,7 +32,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - POSTGRES_DB=${POSTGRES_DB:-postgis}
     volumes:
-      - ./stac/pgstac/pgdata:/var/lib/postgresql/data
+      - ./docker-data/pgstac:/var/lib/postgresql/data
     expose:
       - "5432"
     command: postgres -N 500

@@ -9,10 +9,10 @@ logs/
 
 # Data directories are mounted or generated locally.
 data/
+docker-data/
 trash/
 .cmems_cache/
 backend/.copernicusmarine/
-stac/pgstac/pgdata/
 frontend/node_modules/
 frontend/**/node_modules/
 frontend/**/dist/
