@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zarr API Monitor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f1f3f5; font-size: 0.9rem; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        
+        /* Layout */
+        .sidebar { height: 100vh; overflow-y: auto; background: white; border-right: 1px solid #dee2e6; }
+        .content-main { height: 100vh; display: flex; overflow: hidden; }
+        
+        /* Tree Column (Center) */
+        .column-tree { flex: 1; overflow-y: auto; padding: 20px; border-right: 1px solid #dee2e6; background: white; }
+        /* Preview Column (Right) */
+        .column-preview { width: 380px; overflow-y: auto; padding: 20px; background: #f8f9fa; transition: width 0.3s; }
+        
+        /* Explorer & Tree Items */
+        .path-item, .tree-item { padding: 6px 12px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; }
+        .path-item:hover, .tree-item:hover { background-color: #e7f5ff; }
+        .tree-item.active { background-color: #d0ebff; font-weight: 600; color: #228be6; }
+        
+        .tree-group { margin-left: 18px; border-left: 1px dashed #adb5bd; padding-left: 8px; }
+        .icon-folder { color: #ffd43b; margin-right: 10px; }
+        .icon-file { color: #4dadf7; margin-right: 10px; }
+        .icon-variable { color: #228be6; margin-right: 8px; font-size: 0.8rem; }
+        .icon-group { color: #adb5bd; margin-right: 8px; }
+
+        pre { background: #212529; color: #f8f9fa; padding: 12px; border-radius: 6px; font-size: 0.75rem; white-space: pre-wrap; word-break: break-all; }
+        .breadcrumb-item { cursor: pointer; color: #228be6; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <div class="col-md-3 sidebar p-3">
+            <h6 class="mb-3 text-muted small fw-bold">DATA EXPLORER</h6>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-light p-2 rounded mb-3" id="current-breadcrumb" style="font-size: 0.8rem;">
+                    <li class="breadcrumb-item active">Root</li>
+                </ol>
+            </nav>
+            <div id="folder-list-content"></div>
+        </div>
+
+        <div class="col-md-9 content-main">
+            <div id="welcome-view" class="text-center w-100 mt-5 opacity-50">
+                <i class="bi bi-file-earmark-bar-graph" style="font-size: 4rem;"></i>
+                <p class="mt-3">분석할 <b>.nc 파일</b>을 선택해 주세요.</p>
+            </div>
+
+            <div id="detail-view" style="display: none; width: 100%;">
+                <div class="column-tree">
+					<div class="d-flex justify-content-between align-items-start mb-3 pb-2 border-bottom">
+						<div>
+							<h5 id="detail-filename" class="text-primary fw-bold mb-2">파일명.nc</h5>
+							<div id="keyword-badge-group" class="d-flex flex-wrap gap-1"></div>
+						</div>
+						<div class="d-flex flex-column align-items-end gap-2">
+							<div id="status-badge-area"></div>
+							<button id="btn-convert-zarr" class="btn btn-sm btn-primary">
+								<i class="bi bi-box-arrow-in-right me-1"></i>Zarr 변환 실행
+							</button>
+						</div>
+					</div>
+
+					<h6 class="mb-3 text-muted small fw-bold">GROUP STRUCTURE</h6>
+					<div id="tree-container"></div>
+				</div>
+
+                <div class="column-preview" id="preview-panel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="m-0 text-muted small fw-bold">PROPERTIES</h6>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="toggleJsonView()" title="Raw JSON 보기">
+                            <i class="bi bi-braces"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="preview-welcome" class="alert alert-secondary text-center small p-4 mt-5">
+                        <i class="bi bi-hand-index-thumb d-block mb-2 opacity-50 fs-2"></i>
+                        트리의 <b>변수</b>를 클릭하면<br>상세 정보가 표시됩니다.
+                    </div>
+
+                    <div id="preview-details" style="display: none;">
+                        <div class="card mb-3 border-0 shadow-sm">
+                            <div class="card-body p-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i id="prop-icon" class="me-2 fs-5"></i>
+                                    <h6 id="prop-name" class="m-0 fw-bold text-truncate">변수명</h6>
+                                </div>
+                                <div id="prop-info-area"></div>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white pb-0 border-bottom-0">
+                                <h6 class="m-0 small text-muted fw-bold">Attributes</h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <table class="table table-sm m-0 table-striped small">
+                                    <tbody id="attr-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="json-container" style="display:none;">
+                        <h6 class="small text-muted mb-2">Full Metadata JSON</h6>
+                        <pre><code id="json-code"></code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="liveToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-primary text-white">
+            <strong class="me-auto">시스템 알림</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="toast-message">
+            새로운 파일이 감지되었습니다.
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let currentMetadata = null;
+    let jsonViewActive = false;
+
+    // 초기 로드
+    window.onload = () => loadFolder("");
+
+    async function loadFolder(path = "") {
+        const listEl = document.getElementById('folder-list-content');
+        updateBreadcrumb(path);
+        listEl.innerHTML = '<div class="text-center p-3 text-muted small">Loading...</div>';
+        
+        try {
+            const res = await fetch(`/monitor/list?path=${encodeURIComponent(path)}`);
+            const data = await res.json();
+            
+            let html = "";
+            data.folders.forEach(f => {
+                const nextPath = path === "" ? f : `${path}/${f}`;
+                html += `<div class="path-item" onclick="loadFolder('${nextPath}')"><i class="bi bi-folder-fill icon-folder"></i>${f}</div>`;
+            });
+            data.files.forEach(f => {
+                const filePath = path === "" ? f : `${path}/${f}`;
+                html += `<div class="path-item" onclick="inspectFile('${filePath}')"><i class="bi bi-file-earmark-code-fill icon-file"></i>${f}</div>`;
+            });
+            listEl.innerHTML = html || '<div class="text-center p-3 text-muted small">Empty folder</div>';
+        } catch (e) { listEl.innerHTML = "Error loading files."; }
+    }
+
+    async function inspectFile(filePath) {
+        document.getElementById('welcome-view').style.display = 'none';
+        document.getElementById('detail-view').style.display = 'flex';
+        resetPreview();
+
+        try {
+           const apiContextPath = "{{ api_context_path }}";
+           const res = await fetch(`${apiContextPath}/inspect/structure?file_path=${encodeURIComponent(filePath)}`);
+        currentMetadata = await res.json();
+        const info = currentMetadata.file_info;
+
+        // 1. 파일명 및 키워드 배지 업데이트
+        document.getElementById('detail-filename').textContent = info.name;
+        const badgeGroup = document.getElementById('keyword-badge-group');
+        // badgeGroup.innerHTML = info.keywords.map(k => 
+        //     `<span class="badge rounded-pill bg-light text-dark border" style="font-size:0.7rem;">${k}</span>`
+        // ).join('');
+
+        // 2. Zarr 상태 및 버튼 제어
+        const badgeArea = document.getElementById('status-badge-area');
+        const convertBtn = document.getElementById('btn-convert-zarr');
+        
+        if (info.is_converted) {
+            badgeArea.innerHTML = '<span class="badge bg-success">Converted</span>';
+            convertBtn.disabled = true;
+            convertBtn.classList.replace('btn-primary', 'btn-outline-secondary');
+            convertBtn.textContent = '변환 완료';
+        } else {
+            badgeArea.innerHTML = '<span class="badge bg-warning text-dark">Pending</span>';
+            convertBtn.disabled = false;
+            convertBtn.innerHTML = '<i class="bi bi-play-fill me-1"></i>Zarr 변환 실행';
+        }
+
+        // 3. 트리 및 자동 Root 정보 표시
+        renderTree(currentMetadata.detail.data.root_group);
+        showGroupPreview('root'); // 파일을 열자마자 Global Attributes 표시
+            renderTree(currentMetadata.detail.data.root_group);
+        } catch (e) { console.log(e);alert("Analysis failed."); }
+    }
+
+    function renderTree(rootGroup) {
+        const container = document.getElementById('tree-container');
+        container.innerHTML = renderGroupNode(rootGroup, "root", "root");
+    }
+
+    function renderGroupNode(group, name, path) {
+        let html = `<div class="tree-group-node">
+            <div class="tree-item" onclick="showGroupPreview('${path}')" id="node-${path}">
+                <i class="bi bi-folder icon-group"></i><strong>${name}</strong>
+            </div>
+            <div class="tree-group">`;
+        
+        if (group.variables) {
+            group.variables.forEach(v => {
+                const vPath = `${path}.${v.name}`;
+                html += `<div class="tree-item" onclick="showVarPreview('${vPath}')" id="node-${vPath}">
+                    <i class="bi bi-bookmark-fill icon-variable"></i><span>${v.name}</span>
+                </div>`;
+            });
+        }
+        if (group.groups) {
+            for (let gName in group.groups) {
+                html += renderGroupNode(group.groups[gName], gName, `${path}.${gName}`);
+            }
+        }
+        return html + `</div></div>`;
+    }
+
+    function showVarPreview(vPath) {
+		resetPreview();
+		document.getElementById('node-' + vPath).classList.add('active');
+		document.getElementById('preview-welcome').style.display = 'none';
+		document.getElementById('preview-details').style.display = 'block';
+
+		const parts = vPath.split('.');
+		let target = currentMetadata.detail.data.root_group;
+		for(let i=1; i<parts.length-1; i++) target = target.groups[parts[i]];
+		const varData = target.variables.find(v => v.name === parts[parts.length-1]);
+
+		document.getElementById('prop-icon').className = "bi bi-bookmark-fill icon-variable";
+		document.getElementById('prop-name').textContent = varData.name;
+		
+		// 기본 타입 및 차원 정보
+		document.getElementById('prop-info-area').innerHTML = `
+			<table class="table table-sm m-0 small">
+				<tr><th class="text-muted">Type</th><td>${varData.dtype}</td></tr>
+				<tr><th class="text-muted">Dims</th><td>[${varData.dims.join(', ')}]</td></tr>
+			</table>`;
+
+		let attrHtml = "";
+		
+		// 1. 차원(Dimensions) 크기 정보 먼저 출력
+		varData.dims.forEach(d => {
+			attrHtml += `<tr><td class="text-info fw-bold">${d}</td><td>${currentMetadata.structure.dimensions[d] || '?'}</td></tr>`;
+		});
+
+		// 2. [핵심] 변수가 가진 모든 Attributes(units 등 포함)를 순회하며 출력
+		if (varData.attributes) {
+			for (const [key, value] of Object.entries(varData.attributes)) {
+				// 이미 위에서 보여준 dims와 중복되지 않게 처리 (필요 시)
+				attrHtml += `<tr><td class="text-success fw-bold">${key}</td><td>${value}</td></tr>`;
+			}
+		}
+
+		document.getElementById('attr-table-body').innerHTML = attrHtml || '<tr><td colspan="2" class="text-center p-3 text-muted">속성이 없습니다.</td></tr>';
+	}
+
+   	// monitor.html 내의 showGroupPreview 함수 수정
+	function showGroupPreview(gPath) {
+		resetPreview();
+		const node = document.getElementById('node-' + gPath);
+		if (node) node.classList.add('active');
+		
+		document.getElementById('preview-welcome').style.display = 'none';
+		document.getElementById('preview-details').style.display = 'block';
+		
+		const propName = document.getElementById('prop-name');
+		const propInfo = document.getElementById('prop-info-area');
+		const attrBody = document.getElementById('attr-table-body');
+
+		// 1. 경로를 따라가며 해당 그룹의 데이터 찾기
+		const parts = gPath.split('.');
+		let targetGroup = currentMetadata.structure.root_group;
+		
+		// root가 아닐 경우 하위로 탐색
+		if (gPath !== "root") {
+			for (let i = 1; i < parts.length; i++) {
+				targetGroup = targetGroup.groups[parts[i]];
+			}
+		}
+
+		// 2. UI 표시 정보 설정
+		propName.textContent = (gPath === "root") ? "Global Attributes" : parts[parts.length - 1];
+		propInfo.innerHTML = `<span class="badge bg-secondary">${gPath}</span>`;
+		
+		// 3. [핵심] 해당 그룹이 가진 모든 속성을 테이블로 출력
+		let attrHtml = "";
+		
+		// 전역 속성(Global) 혹은 그룹 속성(Attributes) 통합 처리
+		const attrs = (gPath === "root") ? currentMetadata.structure.global_attributes : targetGroup.attributes;
+
+		if (attrs && Object.keys(attrs).length > 0) {
+			for (const [key, value] of Object.entries(attrs)) {
+				attrHtml += `
+					<tr>
+						<td class="fw-bold text-secondary" style="width:35%; font-size:0.75rem;">${key}</td>
+						<td class="text-break" style="font-size:0.8rem;">${value}</td>
+					</tr>`;
+			}
+		} else {
+			attrHtml = '<tr><td colspan="2" class="text-center p-3 text-muted">이 그룹에는 속성 정보가 없습니다.</td></tr>';
+		}
+		
+		attrBody.innerHTML = attrHtml;
+	}
+
+    function resetPreview() {
+        document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('active'));
+        document.getElementById('preview-welcome').style.display = 'block';
+        document.getElementById('preview-details').style.display = 'none';
+        document.getElementById('json-container').style.display = 'none';
+        jsonViewActive = false;
+        document.getElementById('preview-panel').style.width = '380px';
+    }
+
+    function toggleJsonView() {
+        jsonViewActive = !jsonViewActive;
+        const panel = document.getElementById('preview-panel');
+        document.getElementById('preview-details').style.display = jsonViewActive ? 'none' : 'block';
+        document.getElementById('preview-welcome').style.display = 'none';
+        document.getElementById('json-container').style.display = jsonViewActive ? 'block' : 'none';
+        panel.style.width = jsonViewActive ? '600px' : '380px';
+    }
+
+    function updateBreadcrumb(path) {
+        const bc = document.getElementById('current-breadcrumb');
+        let html = '<li class="breadcrumb-item" onclick="loadFolder(\'\')">Root</li>';
+        if (path) {
+            let parts = path.split('/');
+            parts.forEach((p, i) => {
+                const fullP = parts.slice(0, i+1).join('/');
+                html += `<li class="breadcrumb-item ${i===parts.length-1?'active':''}" onclick="loadFolder('${fullP}')">${p}</li>`;
+            });
+        }
+        bc.innerHTML = html;
+    }
+
+	// monitor.html 하단 스크립트에 추가
+	function setupRealtimeRefresh() {
+		const eventSource = new EventSource("{{ api_context_path }}/events/watch");
+
+		eventSource.onmessage = function(event) {
+			if (event.data === "refresh") {
+				console.log("파일 변경 감지! 목록을 갱신합니다.");
+				
+				// 현재 브레드크럼의 마지막 경로를 가져와서 갱신
+				const currentPath = getCurrentPathFromBreadcrumb(); 
+				loadFolder(currentPath); //
+				
+				// 알림 토스트 하나 띄워주면 더 좋습니다.
+				showToast("새로운 파일이 도착했습니다.");
+			}
+		};
+
+		eventSource.onerror = function() {
+			console.log("SSE 연결 끊김, 재연결 시도 중...");
+		};
+	}
+
+	// 브레드크럼에서 현재 경로 문자열 추출하는 헬퍼
+	function getCurrentPathFromBreadcrumb() {
+		const items = document.querySelectorAll('#current-breadcrumb .breadcrumb-item');
+		let pathParts = [];
+		// Root(index 0) 제외하고 나머지 텍스트 수집
+		for(let i=1; i<items.length; i++) {
+			pathParts.push(items[i].innerText.trim());
+		}
+		return pathParts.join('/'); //
+	}
+
+	// 1. Toast 알림 함수 정의
+	function showToast(message) {
+		const toastElement = document.getElementById('liveToast');
+		const toastMessage = document.getElementById('toast-message');
+		toastMessage.textContent = message;
+		
+		const toast = new bootstrap.Toast(toastElement);
+		toast.show();
+	}
+
+	// 페이지 로드 시 실행
+	window.onload = () => {
+		loadFolder("");
+		setupRealtimeRefresh();
+	};
+</script>
+</body>
+</html>

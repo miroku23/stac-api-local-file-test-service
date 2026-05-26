@@ -1,0 +1,16 @@
+{
+  "name": "@zarr/ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./styles.css": "./src/styles.css"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "vue": "^3.5.25",
+    "vuex": "^4.1.0"
+  }
+}

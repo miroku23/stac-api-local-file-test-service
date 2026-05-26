@@ -1,0 +1,149 @@
+services:
+  backend:
+    build: ./backend
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ZARR_CONVERT_MAX_WORKERS=${ZARR_CONVERT_MAX_WORKERS:-2}
+    volumes:
+      - ./backend:/app
+      - ${LOCAL_DATA_PATH}:/app/data
+      - ${LOCAL_TEMP_PATH}:/app/temp/
+      - ./backend/.copernicusmarine:/root/.copernicusmarine
+    expose:
+      - "${NGINX_BACKEND_PORT:-8000}"
+    networks:
+      default:
+        aliases:
+          - ${NGINX_BACKEND_ALIAS:-backend-api}
+    command: sh -lc "uvicorn main:app --host 0.0.0.0 --port $${NGINX_BACKEND_PORT:-8000} --reload"
+
+  pgstac:
+    build:
+      context: ./stac/pgstac
+      dockerfile: docker/pgstac/Dockerfile
+      target: pgstac
+    image: zarr-api-project-pgstac:dev
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-postgis}
+    volumes:
+      - ./stac/pgstac/pgdata:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    command: postgres -N 500
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-postgis}"]
+      start_period: 45s
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  stac-api:
+    build:
+      context: ./stac/stac-fastapi
+      dockerfile: Dockerfile
+    image: zarr-api-project-stac-fastapi:dev
+    depends_on:
+      pgstac:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - APP_HOST=0.0.0.0
+      - APP_PORT=${NGINX_STAC_API_PORT:-8080}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASS=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_HOST_READER=pgstac
+      - POSTGRES_HOST_WRITER=pgstac
+      - POSTGRES_DBNAME=${POSTGRES_DB:-postgis}
+      - PGUSER=${POSTGRES_USER:-postgres}
+      - PGPASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - PGHOST=pgstac
+      - PGPORT=5432
+      - PGDATABASE=${POSTGRES_DB:-postgis}
+      - ENABLE_TRANSACTIONS_EXTENSIONS=TRUE
+      - STAC_FASTAPI_DOCS_URL=/docs
+      - STAC_FASTAPI_OPENAPI_URL=/openapi.json
+      - UVICORN_ROOT_PATH=${NGINX_STAC_PATH:-/stac}
+    command: sh -lc "uv pip install --python /app/.venv/bin/python --upgrade --force-reinstall 'stac-fastapi-pgstac[server]==6.2.2' && /app/.venv/bin/python -m stac_fastapi.pgstac.app"
+    expose:
+      - "${NGINX_STAC_API_PORT:-8080}"
+    networks:
+      default:
+        aliases:
+          - ${NGINX_STAC_API_ALIAS:-stac-api-upstream}
+
+  file-manage:
+    build: ./frontend
+    image: zarr-api-project-frontend:dev
+    env_file:
+      - .env
+    environment:
+      - VITE_HMR_CLIENT_PORT=${NGINX_PORT:-9000}
+    volumes:
+      - ./frontend/apps/file-manage/src:/app/apps/file-manage/src
+      - ./frontend/apps/file-manage/index.html:/app/apps/file-manage/index.html
+      - ./frontend/apps/file-manage/vite.config.js:/app/apps/file-manage/vite.config.js
+      - ./frontend/packages:/app/packages
+    expose:
+      - "${NGINX_FILE_MANAGE_PORT:-5173}"
+    networks:
+      default:
+        aliases:
+          - ${NGINX_FILE_MANAGE_ALIAS:-file-manage-app}
+    command: pnpm --filter @zarr/file-manage dev
+
+  geo-viewer:
+    image: zarr-api-project-frontend:dev
+    env_file:
+      - .env
+    environment:
+      - VITE_HMR_CLIENT_PORT=${NGINX_PORT:-9000}
+    volumes:
+      - ./frontend/apps/geo-viewer/src:/app/apps/geo-viewer/src
+      - ./frontend/apps/geo-viewer/index.html:/app/apps/geo-viewer/index.html
+      - ./frontend/apps/geo-viewer/vite.config.js:/app/apps/geo-viewer/vite.config.js
+      - ./frontend/packages:/app/packages
+      - ./wasm:/app/wasm
+    expose:
+      - "${NGINX_GEO_VIEWER_PORT:-5174}"
+    networks:
+      default:
+        aliases:
+          - ${NGINX_GEO_VIEWER_ALIAS:-geo-viewer-app}
+    command: pnpm --filter @zarr/geo-viewer dev
+
+  nginx:
+    image: nginx:1.27-alpine
+    env_file:
+      - .env
+    environment:
+      - NGINX_ENVSUBST_FILTER=^NGINX_
+      - NGINX_FILE_MANAGE_PATH=${NGINX_FILE_MANAGE_PATH:-/manage}
+      - NGINX_GEO_VIEWER_PATH=${NGINX_GEO_VIEWER_PATH:-/viewer}
+      - NGINX_API_PATH=${NGINX_API_PATH:-/api}
+      - NGINX_STAC_PATH=${NGINX_STAC_PATH:-/stac}
+      - NGINX_BACKEND_ALIAS=${NGINX_BACKEND_ALIAS:-backend-api}
+      - NGINX_BACKEND_PORT=${NGINX_BACKEND_PORT:-8000}
+      - NGINX_FILE_MANAGE_ALIAS=${NGINX_FILE_MANAGE_ALIAS:-file-manage-app}
+      - NGINX_FILE_MANAGE_PORT=${NGINX_FILE_MANAGE_PORT:-5173}
+      - NGINX_GEO_VIEWER_ALIAS=${NGINX_GEO_VIEWER_ALIAS:-geo-viewer-app}
+      - NGINX_GEO_VIEWER_PORT=${NGINX_GEO_VIEWER_PORT:-5174}
+      - NGINX_STAC_API_ALIAS=${NGINX_STAC_API_ALIAS:-stac-api-upstream}
+      - NGINX_STAC_API_PORT=${NGINX_STAC_API_PORT:-8080}
+    depends_on:
+      - backend
+      - file-manage
+      - geo-viewer
+      - stac-api
+    volumes:
+      - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+    ports:
+      - "${NGINX_PORT:-9000}:80"
+    networks:
+      - default

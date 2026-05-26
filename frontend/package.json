@@ -1,0 +1,33 @@
+{
+  "name": "zarr-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@10.12.1",
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:docker": "pnpm --filter @zarr/file-manage dev & pnpm --filter @zarr/geo-viewer dev & wait",
+    "dev:file-manage": "pnpm --filter @zarr/file-manage dev",
+    "dev:geo-viewer": "pnpm --filter @zarr/geo-viewer dev",
+    "build": "turbo build",
+    "build:ssg": "turbo build",
+    "lint": "turbo lint",
+    "preview:file-manage": "pnpm --filter @zarr/file-manage preview",
+    "preview:geo-viewer": "pnpm --filter @zarr/geo-viewer preview"
+  },
+  "devDependencies": {
+    "@primevue/auto-import-resolver": "^4.5.5",
+    "@tailwindcss/vite": "^4.1.17",
+    "@vitejs/plugin-vue": "^6.0.3",
+    "tailwindcss": "^4.1.17",
+    "turbo": "^2.6.3",
+    "unplugin-vue-components": "^32.1.0"
+  },
+  "dependencies": {
+    "@primeuix/themes": "^2.0.3",
+    "material-symbols": "^0.44.6",
+    "primeicons": "^7.0.0",
+    "primevue": "^4.5.5",
+    "tailwindcss-primeui": "^0.6.1"
+  }
+}

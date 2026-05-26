@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+body {
+  margin: 0;
+}
+
+#app,
+.geo-host {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
