@@ -133,3 +133,25 @@ docker compose logs -f
 ```bash
 docker compose down
 ```
+
+## Third-party STAC components
+
+This project uses the following external open-source STAC components as Git
+submodules under `stac/`:
+
+| Component | Path | Upstream |
+| --- | --- | --- |
+| PgSTAC | `stac/pgstac` | `https://github.com/stac-utils/pgstac` |
+| stac-fastapi | `stac/stac-fastapi` | `https://github.com/stac-utils/stac-fastapi` |
+
+These components are maintained by the `stac-utils` community and are not
+authored in this repository. Their license files are kept in each submodule:
+
+- `stac/pgstac/LICENSE`
+- `stac/stac-fastapi/LICENSE`
+
+When cloning this repository, initialize the STAC submodules with:
+
+```bash
+git submodule update --init --recursive
+```
