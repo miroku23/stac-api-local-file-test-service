@@ -155,3 +155,23 @@ When cloning this repository, initialize the STAC submodules with:
 ```bash
 git submodule update --init --recursive
 ```
+
+## External Download Data Notices
+
+This repository provides tools that can request and store third-party weather,
+ocean, atmospheric-composition, satellite-product, and orbital-element data.
+The downloaded datasets are not authored by this repository. Users are
+responsible for complying with the applicable source data licences, citation
+rules, attribution requirements, account terms, and redistribution limits.
+
+| Provider / service | Data requested by this project | Rights / usage notice |
+| --- | --- | --- |
+| NOAA / NCEP GFS | Global Forecast System forecast fields such as wind, temperature, humidity, pressure, precipitation, and related GRIB products. | NOAA information is generally public information/public domain unless otherwise noted. Credit NOAA/NCEP where appropriate and review NOAA/NCEI/NCEP disclaimers for operational data quality and availability. See: `https://www.ncei.noaa.gov/products/weather-climate-models/global-forecast`, `https://www.noaa.gov/disclaimer` |
+| ECMWF Open Data | ECMWF forecast products such as wind, temperature, humidity, pressure, precipitation, and related GRIB products. | ECMWF Open Data is governed by the Creative Commons Attribution 4.0 International licence and ECMWF Terms of Use unless labelled otherwise. Attribution to ECMWF is required. See: `https://www.ecmwf.int/en/forecasts/datasets/open-data`, `https://apps.ecmwf.int/datasets/licences/general/` |
+| Copernicus Marine Service (CMEMS) | Ocean-current products including daily/monthly/6-hour current and surface-current variables such as `uo`, `vo`, `utotal`, and `vtotal`, typically delivered as NetCDF/Zarr products. | Use is governed by Copernicus Marine terms, policy, product-level DOI/reference guidance, and the applicable Copernicus licence agreement. Cite the specific product/dataset used. See: `https://marine.copernicus.eu/user-corner/service-commitments-and-licence`, `https://help.marine.copernicus.eu/en/articles/4444611-how-to-cite-copernicus-marine-products-and-services` |
+| NASA / NOAA TEMPO via Earthdata | TEMPO atmospheric products such as ozone profile, total ozone, nitrogen dioxide, formaldehyde, and cloud products at L2/L3 levels. | NASA Earth science data are generally open; NASA-led mission data are generally CC0 unless marked with restrictions, but NASA strongly urges dataset citation and acknowledgement. Non-NASA data may carry source-specific terms. See: `https://www.earthdata.nasa.gov/engage/open-data-services-software/data-use-policy` |
+| Copernicus Sentinel-5P / TROPOMI | Sentinel-5P atmospheric products such as NO2, O3, SO2, CO, CH4, HCHO, aerosol index/layer height, and cloud products. | Copernicus Sentinel data are available on a free, full, and open basis under the Copernicus Sentinel data legal notice, without warranty. Follow Copernicus/Sentinel attribution and product-specific citation guidance. See: `https://cds.climate.copernicus.eu/licences/ec-sentinel`, `https://www.copernicus.eu/en/terms-use/how-access-data` |
+| CelesTrak / space-object GP data | Satellite TLE / GP element data for configured satellites such as GEO-KOMPSAT-2B, Sentinel-5P, and TEMPO-related entries. | CelesTrak provides GP/TLE data and related resources for the space community. Users should review CelesTrak documentation, source notes, and any Space-Track/CelesTrak usage requirements before redistribution. See: `https://celestrak.org/`, `https://www.celestrak.org/NORAD/documentation/gp-data-formats.php` |
+
+No endorsement by NOAA, ECMWF, Copernicus, ESA, NASA, CelesTrak, Space-Track,
+or any related agency or operator is implied by this project.
