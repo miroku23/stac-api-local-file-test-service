@@ -9,7 +9,11 @@ logs/
 
 # Data directories are mounted or generated locally.
 data/
-docker-data/
+docker-data/*
+!docker-data/.gitkeep
+!docker-data/pgstac/
+docker-data/pgstac/*
+!docker-data/pgstac/.gitkeep
 trash/
 .cmems_cache/
 backend/.copernicusmarine/
