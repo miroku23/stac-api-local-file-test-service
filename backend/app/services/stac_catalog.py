@@ -1,30 +1,24 @@
 import hashlib
-import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
+
+import requests
 
 from app.core.config import settings
 from app.core.paths import safe_join
 
 try:
     import numpy as np
-    import pystac
     from netCDF4 import Dataset
 except ImportError:  # pragma: no cover - dependencies are installed in the backend image.
     np = None
-    pystac = None
     Dataset = None
 
 
 LON_NAMES = {"lon", "longitude", "longitudes"}
 LAT_NAMES = {"lat", "latitude", "latitudes"}
-
-
-def _require_pystac():
-    if pystac is None:
-        raise RuntimeError("pystac is not installed. Rebuild the backend image after updating requirements.txt.")
 
 
 def _safe_id(value: str) -> str:
@@ -82,9 +76,7 @@ def _datetime_from_name(path: str) -> datetime:
 def _asset_href(source: str, path: str) -> str:
     quoted = quote(path.replace("\\", "/").lstrip("/"), safe="/")
     api_path = settings.api_context_path
-    if source == "zarr":
-        return f"{api_path}/data/zarr/{quoted}"
-    return f"{api_path}/data/raw/{quoted}"
+    return f"{api_path}/data/{quoted}"
 
 
 def _zarr_path_for_raw(path: str) -> str:
@@ -170,23 +162,97 @@ def _geometry_from_bbox(bbox):
     }
 
 
-def _collection_extent(bbox, dt):
-    spatial = pystac.SpatialExtent([bbox])
-    temporal = pystac.TemporalExtent([[dt, dt]])
-    return pystac.Extent(spatial, temporal)
+def _datetime_to_stac(dt: datetime) -> str:
+    return dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _collection_document(collection_id: str, bbox, dt: datetime):
+    timestamp = _datetime_to_stac(dt)
+    return {
+        "type": "Collection",
+        "stac_version": "1.0.0",
+        "id": collection_id,
+        "description": f"Datasets indexed from {collection_id}",
+        "license": "proprietary",
+        "extent": {
+            "spatial": {"bbox": [bbox]},
+            "temporal": {"interval": [[timestamp, timestamp]]},
+        },
+        "links": [],
+    }
+
+
+def _item_document(item_id: str, collection_id: str, normalized_path: str, source: str, bbox, geometry, dt: datetime):
+    assets = {
+        source: {
+            "href": _asset_href(source, normalized_path),
+            "type": "application/vnd+zarr" if source == "zarr" else "application/octet-stream",
+            "roles": ["data"],
+            "title": Path(normalized_path).name,
+        }
+    }
+    if source == "raw":
+        zarr_path = _zarr_path_for_raw(normalized_path)
+        zarr_full_path = safe_join(settings.data_root, zarr_path)
+        if zarr_full_path.exists():
+            assets["zarr"] = {
+                "href": _asset_href("zarr", zarr_path),
+                "type": "application/vnd+zarr",
+                "roles": ["data", "derived"],
+                "title": Path(zarr_path).name,
+            }
+
+    properties = _properties_from_path(normalized_path, source)
+    properties["datetime"] = _datetime_to_stac(dt)
+    return {
+        "type": "Feature",
+        "stac_version": "1.0.0",
+        "id": item_id,
+        "collection": collection_id,
+        "geometry": geometry,
+        "bbox": bbox,
+        "properties": properties,
+        "assets": assets,
+        "links": [],
+    }
+
+
+def _raise_for_stac_response(response):
+    if response.ok:
+        return
+    raise RuntimeError(f"STAC API request failed ({response.status_code}): {response.text}")
 
 
 class StacCatalogService:
-    def __init__(self):
-        self.catalog_dir = Path(settings.stac_catalog_dir)
-
     def _resolve_source_path(self, source: str, path: str) -> Path:
-        if source == "zarr":
-            return safe_join(settings.data_processed_dir, path)
-        return safe_join(settings.data_raw_dir, path)
+        return safe_join(settings.data_root, path)
+
+    def _create_collection(self, collection):
+        response = requests.post(f"{settings.stac_api_internal_url}/collections", json=collection, timeout=20)
+        if response.status_code == 409:
+            return {"status": "exists"}
+        _raise_for_stac_response(response)
+        return response.json()
+
+    def _upsert_item(self, collection_id: str, item_id: str, item):
+        create_response = requests.post(
+            f"{settings.stac_api_internal_url}/collections/{collection_id}/items",
+            json=item,
+            timeout=20,
+        )
+        if create_response.status_code != 409:
+            _raise_for_stac_response(create_response)
+            return create_response.json()
+
+        update_response = requests.put(
+            f"{settings.stac_api_internal_url}/collections/{collection_id}/items/{item_id}",
+            json=item,
+            timeout=20,
+        )
+        _raise_for_stac_response(update_response)
+        return update_response.json()
 
     def create_item(self, path: str, source: str = "raw"):
-        _require_pystac()
         source = source.lower().strip()
         if source not in {"raw", "zarr"}:
             raise ValueError("source must be raw or zarr.")
@@ -201,60 +267,16 @@ class StacCatalogService:
         dt = _datetime_from_name(normalized_path)
         bbox = _bbox_from_attrs_or_default(full_path, source)
         geometry = _geometry_from_bbox(bbox)
+        collection = _collection_document(collection_id, bbox, dt)
+        item = _item_document(item_id, collection_id, normalized_path, source, bbox, geometry, dt)
 
-        root = pystac.Catalog(id="zarr-api-catalog", description="Local Zarr API STAC catalog")
-        collection = pystac.Collection(
-            id=collection_id,
-            description=f"Datasets indexed from {collection_id}",
-            extent=_collection_extent(bbox, dt),
-            license="proprietary",
-        )
-        item = pystac.Item(
-            id=item_id,
-            geometry=geometry,
-            bbox=bbox,
-            datetime=dt,
-            properties=_properties_from_path(normalized_path, source),
-        )
-        item.add_asset(
-            source,
-            pystac.Asset(
-                href=_asset_href(source, normalized_path),
-                media_type="application/vnd+zarr" if source == "zarr" else "application/octet-stream",
-                roles=["data"],
-                title=Path(normalized_path).name,
-            ),
-        )
+        self._create_collection(collection)
+        self._upsert_item(collection_id, item_id, item)
 
-        if source == "raw":
-            zarr_path = _zarr_path_for_raw(normalized_path)
-            zarr_full_path = safe_join(settings.data_processed_dir, zarr_path)
-            if zarr_full_path.exists():
-                item.add_asset(
-                    "zarr",
-                    pystac.Asset(
-                        href=_asset_href("zarr", zarr_path),
-                        media_type="application/vnd+zarr",
-                        roles=["data", "derived"],
-                        title=Path(zarr_path).name,
-                    ),
-                )
-
-        collection.add_item(item)
-        root.add_child(collection)
-
-        target_dir = self.catalog_dir / collection_id
-        os.makedirs(target_dir, exist_ok=True)
-        root.normalize_hrefs(str(self.catalog_dir))
-        root.save(catalog_type=pystac.CatalogType.SELF_CONTAINED)
-
-        item_href = Path(item.get_self_href() or target_dir / item.id / "item.json")
         return {
             "status": "success",
-            "catalog_path": str((self.catalog_dir / "catalog.json").resolve()),
             "collection_id": collection_id,
             "item_id": item_id,
-            "item_path": str(item_href.resolve()),
             "stac_api_url": settings.stac_api_url,
         }
 

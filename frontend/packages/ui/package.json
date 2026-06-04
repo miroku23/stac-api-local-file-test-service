@@ -1,5 +1,5 @@
 {
-  "name": "@zarr/ui",
+  "name": "@repo/ui",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -8,9 +8,18 @@
     ".": "./src/index.js",
     "./styles.css": "./src/styles.css"
   },
+  "sideEffects": [
+    "./src/styles.css"
+  ],
   "dependencies": {
-    "lodash": "^4.17.21",
-    "vue": "^3.5.25",
-    "vuex": "^4.1.0"
+    "@primeuix/themes": "^2.0.3",
+    "primeicons": "^7.0.0",
+    "primevue": "^4.5.5",
+    "tailwindcss-primeui": "^0.6.1",
+    "vue": "^3.5.25"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.17",
+    "tailwindcss": "^4.1.17"
   }
 }

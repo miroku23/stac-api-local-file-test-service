@@ -81,10 +81,10 @@ const shadowClass = computed(() =>
 );
 
 const sizeClass = computed(() => {
-  if (props.size === "desktop") return "!text-[72px]";
-  if (props.size === "list") return "!text-[24px]";
-  if (props.size === "small") return "!text-[22px]";
-  return props.type === "folder" ? "!text-[82px]" : "!text-[76px]";
+  if (props.size === "desktop") return "!text-7xl";
+  if (props.size === "list") return "!text-2xl";
+  if (props.size === "small") return "!text-2xl";
+  return props.type === "folder" ? "!text-8xl" : "!text-7xl";
 });
 
 const buttonClass = computed(() => {
@@ -102,8 +102,8 @@ const buttonClass = computed(() => {
 
 const labelClass = computed(() => {
   if (props.size === "desktop") {
-    return "line-clamp-2 max-w-full break-all rounded bg-slate-950/25 px-1.5 py-0.5 text-center text-[13px] font-semibold leading-tight shadow-sm";
+    return "line-clamp-2 max-w-full break-all rounded bg-slate-950/25 px-1.5 py-0.5 text-center text-sm font-semibold leading-tight shadow-sm";
   }
-  return "line-clamp-2 max-w-full break-all text-center text-[13px] font-semibold leading-tight";
+  return "line-clamp-2 max-w-full break-all text-center text-sm font-semibold leading-tight";
 });
 </script>

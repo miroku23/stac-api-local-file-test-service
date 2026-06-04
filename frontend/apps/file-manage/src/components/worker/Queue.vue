@@ -1,89 +1,71 @@
 <template>
-  <div>
-    <section
-      v-if="open"
-      class="absolute right-6 top-6 grid w-[min(380px,calc(100vw-48px))] overflow-hidden border border-white/50 bg-white/95 shadow-xl backdrop-blur"
-      :style="{ zIndex }"
-      @pointerdown="focus"
-    >
-      <header class="flex h-9 min-w-0 items-center justify-between border-b border-slate-200 bg-slate-50 px-3">
-        <div class="flex min-w-0 items-center gap-2">
-          <i class="material-symbols-rounded icon !text-[18px] text-sky-600">pending_actions</i>
-          <strong class="truncate text-[13px] text-slate-800">{{ messages.worker.title }}</strong>
-          <Badge :value="activeJobCount" severity="secondary" />
-        </div>
-        <Button text rounded class="!h-7 !w-7 !p-0 !text-slate-400 hover:!bg-rose-50 hover:!text-rose-600" aria-label="Close jobs" @click="open = false">
-          <template #icon><i class="material-symbols-rounded icon !text-[18px]">close</i></template>
-        </Button>
-      </header>
-
-      <Tabs v-model:value="activeTab" class="worker-tabs">
-        <TabList>
-          <Tab value="download">
-            <span class="worker-tab-label">
-              <i class="material-symbols-rounded icon">cloud_download</i>
-              <span>{{ messages.worker.download }}</span>
-              <Badge :value="downloadJobCount" severity="secondary" />
-            </span>
-          </Tab>
-          <Tab value="zarr">
-            <span class="worker-tab-label">
-              <i class="material-symbols-rounded icon">database</i>
-              <span>Zarr</span>
-              <Badge :value="conversionJobs.length" severity="contrast" />
-            </span>
-          </Tab>
-        </TabList>
-        <TabPanels class="!p-0">
-          <TabPanel value="download" class="!p-0">
-            <div class="grid max-h-[320px] gap-2 overflow-auto p-2">
-              <Message severity="secondary" size="small" class="!m-0">{{ messages.worker.empty }}</Message>
-            </div>
-          </TabPanel>
-          <TabPanel value="zarr" class="!p-0">
-            <DataView :value="conversionJobs" data-key="id" class="worker-queue">
-              <template #empty>
-                <div class="p-2">
-                  <Message severity="secondary" size="small" class="!m-0">{{ messages.worker.empty }}</Message>
-                </div>
-              </template>
-              <template #list="{ items }">
-                <div class="grid max-h-[320px] gap-2 overflow-auto p-2">
-                  <article v-for="job in items" :key="job.id" class="grid gap-2 border border-slate-200 bg-white p-3">
-                    <div class="flex min-w-0 items-start justify-between gap-2">
-                      <div class="min-w-0">
-                        <strong class="block truncate text-[13px] text-slate-800">{{ job.title }}</strong>
-                        <span class="block truncate text-[12px] text-slate-500">{{ job.fileName }}</span>
-                      </div>
-                      <div class="flex shrink-0 items-center gap-1">
-                        <Tag :severity="statusSeverity(job.status)" :value="statusLabel(job.status)" />
-                        <Button
-                          v-if="canCancelJob(job)"
-                          text
-                          rounded
-                          class="!h-6 !w-6 !p-0 !text-slate-400 hover:!bg-rose-50 hover:!text-rose-600"
-                          :disabled="job.status === 'canceling'"
-                          aria-label="Cancel job"
-                          @click="cancelConversionJob(job)"
-                        >
-                          <template #icon><i class="material-symbols-rounded icon !text-[17px]">close</i></template>
-                        </Button>
-                      </div>
+  <section class="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-white">
+    <Tabs v-model:value="activeTab" class="worker-tabs">
+      <TabList>
+        <Tab value="download">
+          <span class="worker-tab-label">
+            <i class="material-symbols-rounded icon">cloud_download</i>
+            <span>{{ messages.worker.download }}</span>
+            <Badge :value="downloadJobCount" severity="secondary" />
+          </span>
+        </Tab>
+        <Tab value="zarr">
+          <span class="worker-tab-label">
+            <i class="material-symbols-rounded icon">database</i>
+            <span>Zarr</span>
+            <Badge :value="conversionJobs.length" severity="contrast" />
+          </span>
+        </Tab>
+      </TabList>
+      <TabPanels class="!p-0">
+        <TabPanel value="download" class="!p-0">
+          <div class="grid max-h-[320px] gap-2 overflow-auto p-2">
+            <Message severity="secondary" size="small" class="!m-0">{{ messages.worker.empty }}</Message>
+          </div>
+        </TabPanel>
+        <TabPanel value="zarr" class="!p-0">
+          <DataView :value="conversionJobs" data-key="id" class="worker-queue">
+            <template #empty>
+              <div class="p-2">
+                <Message severity="secondary" size="small" class="!m-0">{{ messages.worker.empty }}</Message>
+              </div>
+            </template>
+            <template #list="{ items }">
+              <div class="grid max-h-[320px] gap-2 overflow-auto p-2">
+                <article v-for="job in items" :key="job.id" class="grid gap-2 border border-slate-200 bg-white p-3">
+                  <div class="flex min-w-0 items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <strong class="block truncate text-sm text-slate-800">{{ job.title }}</strong>
+                      <span class="block truncate text-xs text-slate-500">{{ job.fileName }}</span>
                     </div>
-                    <p v-if="job.message" class="m-0 line-clamp-2 text-[12px] leading-relaxed text-slate-600">{{ job.message }}</p>
-                    <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                      <ProgressBar :value="progressValue(job)" :show-value="false" class="!h-1.5" />
-                      <span class="text-[11px] font-bold text-slate-500">{{ progressText(job) }}</span>
+                    <div class="flex shrink-0 items-center gap-1">
+                      <Tag :severity="statusSeverity(job.status)" :value="statusLabel(job.status)" />
+                      <Button
+                        v-if="canCancelJob(job)"
+                        text
+                        rounded
+                        class="!h-6 !w-6 !p-0 !text-slate-400 hover:!bg-rose-50 hover:!text-rose-600"
+                        :disabled="job.status === 'canceling'"
+                        aria-label="Cancel job"
+                        @click="cancelConversionJob(job)"
+                      >
+                        <template #icon><i class="material-symbols-rounded icon !text-base">close</i></template>
+                      </Button>
                     </div>
-                  </article>
-                </div>
-              </template>
-            </DataView>
-          </TabPanel>
-        </TabPanels>
-      </Tabs>
-    </section>
-  </div>
+                  </div>
+                  <p v-if="job.message" class="m-0 line-clamp-2 text-xs leading-relaxed text-slate-600">{{ job.message }}</p>
+                  <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                    <ProgressBar :value="progressValue(job)" :show-value="false" class="!h-1.5" />
+                    <span class="text-xs font-bold text-slate-500">{{ progressText(job) }}</span>
+                  </div>
+                </article>
+              </div>
+            </template>
+          </DataView>
+        </TabPanel>
+      </TabPanels>
+    </Tabs>
+  </section>
 </template>
 
 <script setup>
@@ -107,20 +89,13 @@ const API_BASE = __API_BASE__;
 const store = useStore();
 const toast = useToast();
 const activeTab = ref("zarr");
-const open = ref(false);
-const zIndex = ref(16);
 const completedJobTimers = new Map();
 const notifiedCompletedJobIds = new Set();
 let jobEventSource = null;
 
 const conversionJobs = computed(() => store.getters.conversionJobs);
 const downloadJobCount = computed(() => 0);
-const maxWindowZIndex = computed(() => Math.max(0, ...store.getters.windows.map((item) => Number(item.zIndex) || 0)));
-const activeJobCount = computed(() => (activeTab.value === "zarr" ? conversionJobs.value.length : downloadJobCount.value));
-const totalJobCount = computed(() => conversionJobs.value.length + downloadJobCount.value);
 const messages = computed(() => store.getters.messages);
-
-defineExpose({ openPanel });
 
 onMounted(() => {
   loadConversionJobs();
@@ -208,15 +183,6 @@ function progressValue(job) {
 
 function progressText(job) {
   return `${Math.round(progressValue(job))}%`;
-}
-
-function focus() {
-  zIndex.value = maxWindowZIndex.value + 1;
-}
-
-function openPanel() {
-  focus();
-  open.value = true;
 }
 
 function canCancelJob(job) {

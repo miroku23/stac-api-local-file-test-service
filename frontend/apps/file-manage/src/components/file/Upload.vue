@@ -1,10 +1,10 @@
 <template>
   <div class="grid h-full place-items-center p-6 text-center">
     <div class="grid max-w-sm justify-items-center gap-3">
-      <i class="material-symbols-rounded filled !text-[56px] text-slate-300">draft</i>
+      <i class="material-symbols-rounded filled text-5xl text-slate-300">draft</i>
       <div class="grid gap-1">
         <strong class="text-base text-slate-700">{{ displayTitle }}</strong>
-        <span class="text-sm text-[var(--zarr-muted)]">{{ displayDescription }}</span>
+        <span class="text-sm text-slate-500">{{ displayDescription }}</span>
       </div>
       <div class="flex flex-wrap justify-center gap-2">
         <Button outlined size="small" :label="displayBrowseLabel" class="!min-h-9" @click="$emit('browse')">
@@ -26,7 +26,7 @@
           </template>
         </FileUpload>
       </div>
-      <span v-if="message" class="text-xs leading-relaxed text-[var(--zarr-muted)]">{{ message }}</span>
+      <span v-if="message" class="text-xs leading-relaxed text-slate-500">{{ message }}</span>
     </div>
   </div>
 </template>

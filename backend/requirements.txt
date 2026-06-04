@@ -23,5 +23,4 @@ psycopg2-binary
 watchdog==4.0.0
 sse-starlette==2.1.0
 earthaccess
-pystac
 ndpyramid

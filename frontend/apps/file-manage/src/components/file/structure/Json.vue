@@ -5,7 +5,7 @@
       <span v-if="summary.key_count !== undefined" class="bg-slate-100 px-2 py-1">{{ summary.key_count }} keys</span>
       <span v-if="summary.length !== undefined" class="bg-slate-100 px-2 py-1">{{ summary.length }} items</span>
     </div>
-    <pre class="max-h-none overflow-auto border border-[var(--zarr-border)] bg-slate-950 p-3 text-xs leading-relaxed text-slate-100"><code>{{ detail.content }}</code></pre>
+    <pre class="max-h-none overflow-auto border border-slate-200 bg-slate-950 p-3 text-xs leading-relaxed text-slate-100"><code>{{ detail.content }}</code></pre>
   </div>
 </template>
 

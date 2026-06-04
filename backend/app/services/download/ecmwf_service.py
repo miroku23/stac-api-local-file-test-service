@@ -3,20 +3,21 @@ import os
 from ecmwf.opendata import Client
 
 from app.core.config import settings
+from app.core.paths import safe_join
 
 
 class ECMWFDownloadService:
     def __init__(self):
-        self.base_dir = settings.data_raw_dir
+        self.base_dir = settings.data_root
         self.client = Client(source="ecmwf")
 
-    def execute(self, date: str, time: str, category: str, area: list, extra_params: dict):
+    def execute(self, date: str, time: str, category: str, area: list, save_path: str = "", extra_params: dict | None = None):
         extra_params = extra_params or {}
         category = (category or "WIND").upper()
         detail_tag, params = self._parameters(category, extra_params)
 
         yyyymm, dd = date[:6], date[6:]
-        target_dir = os.path.join(self.base_dir, "ECMWF", category, yyyymm, dd)
+        target_dir = os.path.join(safe_join(self.base_dir, save_path), "ECMWF", category, yyyymm, dd)
         os.makedirs(target_dir, exist_ok=True)
 
         file_name = f"ECMWF_{category}_{detail_tag}_{date}_{time}.grib2"

@@ -1,0 +1,17 @@
+{
+  "name": "@repo/eslint-config",
+  "private": true,
+  "version": "0.1.0",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-config-turbo": "^2.6.3",
+    "eslint-plugin-vue": "^10.6.2",
+    "vue-eslint-parser": "^10.2.0"
+  },
+  "peerDependencies": {
+    "eslint": "^9.0.0"
+  }
+}

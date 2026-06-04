@@ -22,11 +22,6 @@ async def inspect_structure(
         raise HTTPException(status_code=400, detail=str(e))
 
     if not full_path.exists() and root == "data":
-        try:
-            full_path = safe_join(settings.data_raw_dir, file_path)
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-    if not full_path.exists():
         raise HTTPException(status_code=404, detail="File not found.")
 
     try:

@@ -1,6 +1,6 @@
 <template>
   <Fieldset :legend="text.legend" class="h-full">
-    <div class="grid gap-3 text-[12px]">
+    <div class="grid gap-3 text-xs">
       <div class="flex items-center justify-end">
         <Tag
           :severity="report.strategy.isHeavyPipeline ? 'danger' : 'success'"
@@ -52,8 +52,8 @@ const InfoItem = defineComponent({
   },
   setup(itemProps) {
     return () => h("div", { class: "grid gap-1 rounded border border-slate-200 bg-slate-50 px-3 py-2" }, [
-      h("span", { class: "text-[11px] font-bold text-[var(--zarr-muted)]" }, itemProps.label),
-      h("span", { class: ["truncate text-[13px] text-slate-800", itemProps.strong ? "font-bold" : "font-semibold"], title: itemProps.value }, itemProps.value)
+      h("span", { class: "text-xs font-bold text-slate-500" }, itemProps.label),
+      h("span", { class: ["truncate text-sm text-slate-800", itemProps.strong ? "font-bold" : "font-semibold"], title: itemProps.value }, itemProps.value)
     ]);
   }
 });

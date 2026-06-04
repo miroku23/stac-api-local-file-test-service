@@ -1,0 +1,45 @@
+.metadata-tree-table {
+  @apply min-w-0 w-full max-w-full overflow-hidden border border-slate-200 bg-white;
+}
+
+.metadata-tree-table .p-treetable-table-container {
+  @apply h-full min-h-0 min-w-0 w-full max-w-full;
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  scrollbar-gutter: stable;
+}
+
+.metadata-tree-table .p-treetable-table {
+  width: max(100%, 1000px);
+  min-width: 1000px;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.metadata-tree-table .p-treetable-header-cell,
+.metadata-tree-table [data-pc-section="bodycell"] {
+  @apply border-b border-r border-slate-200;
+}
+
+.metadata-tree-table .p-treetable-header-cell:last-child,
+.metadata-tree-table [data-pc-section="bodycell"]:last-child {
+  @apply border-r-0;
+}
+
+.metadata-tree-table .p-treetable-header-cell {
+  @apply bg-white text-slate-900;
+}
+
+.metadata-tree-table [data-pc-section="bodycell"] {
+  @apply align-top;
+}
+
+.metadata-tree-table .p-treetable-column-resizer {
+  @apply w-3 cursor-col-resize;
+  right: -6px;
+}
+
+.metadata-tree-table .p-treetable-body-cell-content {
+  @apply min-w-0 whitespace-normal break-words leading-relaxed;
+}

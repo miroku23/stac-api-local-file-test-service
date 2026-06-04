@@ -3,6 +3,7 @@ import { RouterView } from "vue-router";
 import { ViteSSG } from "vite-ssg";
 import Aura from "@primeuix/themes/aura";
 import PrimeVue from "primevue/config";
+import Tooltip from "primevue/tooltip";
 import ToastService from "primevue/toastservice";
 
 import App from "./App.vue";
@@ -40,6 +41,7 @@ export const createApp = ViteSSG(
       },
       locale: store.getters.primeVueLocale
     });
+    app.directive("tooltip", Tooltip);
     app.use(store);
     app.use(ToastService);
   }

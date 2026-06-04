@@ -20,6 +20,7 @@ export const ko = {
   },
   browser: {
     createShortcut: "바로가기 만들기",
+    deleteShortcut: "바로가기 삭제",
     viewFile: "파일 보기",
     convertFile: "파일 변환",
     currentPath: "현재 경로",
@@ -126,7 +127,7 @@ export const ko = {
     selectAll: "전체 선택",
     clearAll: "전체 해제",
     outputPath: "저장 경로",
-    outputPlaceholder: "예: folder/name.zarr",
+    outputPlaceholder: "비워두면 원본 데이터 경로에 .zarr로 저장",
     result: "결과",
     run: "Zarr 변환 실행",
     options: {
@@ -151,6 +152,10 @@ export const ko = {
     area: "영역",
     variables: "Variables",
     selectedCount: (count) => `${count}개 선택`,
+    savePath: "저장 경로",
+    savePathPlaceholder: "로컬 저장소 기준 대상 폴더",
+    savePathRequired: "다운로드 저장 경로를 입력하거나 선택하세요.",
+    pickFolder: "경로 지정",
     readyMessage: "설정을 확인하고 다운로드를 실행하세요.",
     datasetEmpty: "검색된 데이터셋이 없습니다.",
     datasetFetchFailed: "데이터셋 목록을 가져오지 못했습니다.",

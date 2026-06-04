@@ -1,0 +1,47 @@
+.mac-desktop {
+  background:
+    radial-gradient(circle at 18% 16%, rgba(116, 222, 235, 0.52), transparent 30%),
+    radial-gradient(circle at 82% 12%, rgba(255, 221, 126, 0.46), transparent 26%),
+    radial-gradient(circle at 68% 82%, rgba(139, 224, 181, 0.38), transparent 34%),
+    linear-gradient(135deg, #0a5364 0%, #31a6ac 45%, #f1c46f 100%);
+}
+
+.desktop-window.maximized {
+  @apply h-auto w-auto;
+  inset: 0 0 10px;
+}
+
+.window-content {
+  @apply grid h-full bg-white;
+}
+
+.window-content > * {
+  @apply min-h-0 min-w-0 overflow-hidden bg-white;
+}
+
+.window-content > .panel,
+.window-content > section > .surface {
+  @apply h-full min-h-0;
+}
+
+.window-content > section > .surface {
+  @apply overflow-hidden;
+}
+
+.window-content > section > .surface > .surface-header {
+  @apply flex-none;
+}
+
+.window-content > section > .surface > .download-layout {
+  @apply min-h-0 flex-1 overflow-hidden;
+}
+
+.panel {
+  @apply grid h-full min-h-0 gap-3;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.split {
+  @apply grid min-h-0 gap-3.5;
+  grid-template-columns: minmax(320px, 42%) minmax(0, 1fr);
+}

@@ -10,53 +10,30 @@ from app.core.paths import safe_join
 
 
 class ZarrConvertService:
-    def __init__(self):
-        self.output_base = settings.data_processed_dir
-        self.raw_base = settings.data_raw_dir
-        self.data_root = settings.data_root
-        self.temp_base = settings.upload_temp_dir
-
     def _resolve_input(self, input_path: str, root: str = "data"):
         normalized = input_path.strip("/")
+        base_dir = settings.upload_temp_dir if root == "temp" else settings.data_root
         if root == "temp":
             try:
-                temp_path = safe_join(self.temp_base, normalized)
+                temp_path = safe_join(base_dir, normalized)
             except ValueError as e:
                 raise FileNotFoundError(str(e))
             if temp_path.exists():
                 return temp_path, os.path.basename(normalized)
             raise FileNotFoundError(f"Source file not found at: {temp_path}")
 
-        raw_prefixes = ("DATA/", "raw/")
-        processed_prefixes = ("ZARR/", "processed/")
-
-        raw_relative = normalized
-        for prefix in raw_prefixes:
-            if normalized.startswith(prefix):
-                raw_relative = normalized[len(prefix):]
-                break
         try:
-            raw_path = safe_join(self.raw_base, raw_relative)
+            source_path = safe_join(base_dir, normalized)
         except ValueError as e:
             raise FileNotFoundError(str(e))
-        if raw_path.exists():
-            return raw_path, raw_relative
+        if source_path.exists():
+            return source_path, normalized
 
-        if normalized.startswith(processed_prefixes):
-            raise FileNotFoundError("Processed files cannot be converted again.")
-
-        try:
-            root_path = safe_join(self.data_root, normalized)
-        except ValueError as e:
-            raise FileNotFoundError(str(e))
-        if root_path.exists():
-            return root_path, raw_relative
-
-        raise FileNotFoundError(f"Source file not found at: {raw_path}")
+        raise FileNotFoundError(f"Source file not found at: {source_path}")
 
     def convert(self, input_path: str, root: str = "data", products: list[dict] | None = None, options: dict | None = None, progress=None):
         """
-        Convert a file selected from DATA_ROOT_DIR/DATA into DATA_ROOT_DIR/ZARR.
+        Convert a selected local file to Zarr under the mounted local file root.
         """
         products = products or []
         options = options or {}
@@ -64,14 +41,10 @@ class ZarrConvertService:
             progress(3, "입력 파일을 확인하는 중입니다.")
         full_input_path, output_relative = self._resolve_input(input_path, root)
         output_path = str(options.get("outputPath") or options.get("outputName") or "").strip().replace("\\", "/").strip("/")
-        for prefix in ("ZARR/", "processed/"):
-            if output_path.startswith(prefix):
-                output_path = output_path[len(prefix):]
-                break
         zarr_rel_path = output_path if output_path else os.path.splitext(output_relative)[0] + ".zarr"
         if not zarr_rel_path.endswith(".zarr"):
             zarr_rel_path = f"{zarr_rel_path}.zarr"
-        zarr_path = safe_join(self.output_base, zarr_rel_path)
+        zarr_path = safe_join(settings.data_root, zarr_rel_path)
 
         os.makedirs(os.path.dirname(zarr_path), exist_ok=True)
 

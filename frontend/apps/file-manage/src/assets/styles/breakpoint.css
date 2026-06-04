@@ -1,0 +1,51 @@
+@media (max-width: 760px) {
+  .download-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .area-grid {
+    grid-template-areas: none;
+    grid-template-columns: 1fr;
+  }
+
+  .north,
+  .west,
+  .east,
+  .south {
+    grid-area: auto;
+  }
+
+  .submit-row {
+    @apply items-stretch flex-col;
+  }
+}
+
+@media (max-width: 900px) {
+  body {
+    @apply overflow-auto;
+  }
+
+  .mac-desktop {
+    @apply min-h-dvh;
+    grid-template-rows: 34px minmax(0, 1fr) 82px;
+  }
+
+  .desktop-window {
+    @apply h-auto min-h-0 w-auto;
+    grid-template-rows: 54px minmax(0, 1fr);
+    inset: 12px 10px 8px;
+  }
+
+  .desktop-window.maximized {
+    inset: 0 0 8px;
+  }
+
+  .desktop-window small {
+    @apply hidden;
+  }
+
+  .split,
+  .form-grid {
+    @apply grid-cols-1;
+  }
+}

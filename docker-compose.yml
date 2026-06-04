@@ -96,7 +96,7 @@ services:
       default:
         aliases:
           - ${NGINX_FILE_MANAGE_ALIAS:-file-manage-app}
-    command: pnpm --filter @zarr/file-manage dev
+    command: pnpm --filter @apps/manage dev
 
   geo-viewer:
     image: zarr-api-project-frontend:dev
@@ -116,7 +116,7 @@ services:
       default:
         aliases:
           - ${NGINX_GEO_VIEWER_ALIAS:-geo-viewer-app}
-    command: pnpm --filter @zarr/geo-viewer dev
+    command: pnpm --filter @apps/viewer dev
 
   nginx:
     image: nginx:1.27-alpine

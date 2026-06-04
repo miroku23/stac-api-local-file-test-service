@@ -1,25 +1,15 @@
 export default {
   state: () => ({
     conversionJobs: [],
-    lastDownload: null,
-    notifications: [],
     maxConversionJobs: 5,
     conversionJobTitles: {}
   }),
   getters: {
-    conversionJobs: (state) => state.conversionJobs,
-    lastDownload: (state) => state.lastDownload,
-    notifications: (state) => state.notifications
+    conversionJobs: (state) => state.conversionJobs
   },
   mutations: {
-    setLastDownload(state, payload) {
-      state.lastDownload = payload;
-    },
     setConversionJobs(state, jobs) {
       state.conversionJobs = jobs;
-    },
-    setNotifications(state, notifications) {
-      state.notifications = notifications;
     }
   },
   actions: {
@@ -83,19 +73,6 @@ export default {
       }
       const normalized = await Promise.all(jobs.map((job) => dispatch("normalizeConversionJob", job)));
       commit("setConversionJobs", normalized.slice(0, state.maxConversionJobs));
-    },
-    pushNotification({ state, commit }, notification) {
-      commit("setNotifications", [
-        ...state.notifications,
-        {
-          id: Date.now(),
-          type: "info",
-          ...notification
-        }
-      ]);
-    },
-    clearNotifications({ commit }) {
-      commit("setNotifications", []);
     }
   }
 };

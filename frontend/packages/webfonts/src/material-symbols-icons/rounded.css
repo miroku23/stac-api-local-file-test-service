@@ -1,0 +1,5 @@
+@import "material-symbols/rounded.css";
+
+.material-symbols-rounded.filled {
+  font-variation-settings: "FILL" 1;
+}

@@ -69,50 +69,8 @@ def _list_entries(target_path, excluded_names=None):
     return sorted(folders), sorted(files), sorted(folder_entries, key=lambda item: item["name"]), sorted(file_entries, key=lambda item: item["name"])
 
 
-def _list_zarr_entries(target_path, path):
-    folders = []
-    files = []
-    folder_entries = []
-    file_entries = []
-    with os.scandir(target_path) as it:
-        for entry in it:
-            if entry.is_dir() and entry.name.endswith(".zarr"):
-                files.append(entry.name)
-                file_entries.append(_entry_info(entry, f"{path}/{entry.name}".strip("/"), "zarr"))
-            elif entry.is_dir():
-                folders.append(entry.name)
-                folder_entries.append(_entry_info(entry, f"{path}/{entry.name}".strip("/"), "folder"))
-            elif not entry.name.startswith("."):
-                files.append(entry.name)
-                file_entries.append(_entry_info(entry, f"{path}/{entry.name}".strip("/"), "file"))
-
-    return {
-        "current_path": path,
-        "folders": sorted(folders),
-        "files": sorted(files),
-        "folder_entries": sorted(folder_entries, key=lambda item: item["name"]),
-        "file_entries": sorted(file_entries, key=lambda item: item["name"]),
-    }
-
-
-@router.get("/data")
-async def list_raw_directory(path: str = Query("", description="Relative path from data/raw")):
-    try:
-        target_path = safe_join(settings.data_raw_dir, path)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    if not target_path.exists():
-        return {"current_path": path, "folders": [], "files": []}
-
-    folders, files, folder_entries, file_entries = await run_in_threadpool(_list_entries, target_path)
-    for item in folder_entries + file_entries:
-        item["path"] = f"{path}/{item['name']}".strip("/")
-    return {"current_path": path, "folders": folders, "files": files, "folder_entries": folder_entries, "file_entries": file_entries}
-
-
 @router.get("/root")
-async def list_root_directory(path: str = Query("", description="Relative path from DATA_ROOT_DIR")):
+async def list_root_directory(path: str = Query("", description="Relative path from the mounted local file root")):
     normalized_path = path.strip("/\\")
     if normalized_path.split("/", 1)[0] in RESERVED_ROOT_FOLDERS:
         raise HTTPException(status_code=404, detail="Folder not found.")
@@ -167,14 +125,3 @@ async def create_root_folder(payload: CreateFolderRequest):
     }
 
 
-@router.get("/zarr")
-async def list_zarr_directory(path: str = Query("", description="Relative path from data/processed")):
-    try:
-        target_path = safe_join(settings.data_processed_dir, path)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    if not target_path.exists():
-        return {"current_path": path, "folders": [], "files": []}
-
-    return await run_in_threadpool(_list_zarr_entries, target_path, path)
