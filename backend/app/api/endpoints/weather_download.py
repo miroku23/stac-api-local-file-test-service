@@ -19,6 +19,7 @@ class WeatherDownloadRequest(BaseModel):
     date: str
     time: str = "00"
     category: str
+    save_path: str = ""
     area: List[float] = Field(default_factory=list)
     extra_params: Dict[str, Any] = Field(default_factory=dict)
 
@@ -32,6 +33,7 @@ class SatelliteDatasetRequest(BaseModel):
 
 @router.post("/ecmwf")
 async def api_download_ecmwf(req: WeatherDownloadRequest):
+    validate_save_path(req.save_path)
     try:
         result = await run_in_threadpool(
             ecmwf_service.execute,
@@ -39,6 +41,7 @@ async def api_download_ecmwf(req: WeatherDownloadRequest):
             time=req.time,
             category=req.category,
             area=req.area,
+            save_path=req.save_path,
             extra_params=req.extra_params,
         )
         return {"status": "success", "provider": "ECMWF", "data": result}
@@ -48,6 +51,7 @@ async def api_download_ecmwf(req: WeatherDownloadRequest):
 
 @router.post("/gfs")
 async def api_download_gfs(req: WeatherDownloadRequest):
+    validate_save_path(req.save_path)
     try:
         result = await run_in_threadpool(
             gfs_service.execute,
@@ -55,6 +59,7 @@ async def api_download_gfs(req: WeatherDownloadRequest):
             time=req.time,
             category=req.category,
             area=req.area,
+            save_path=req.save_path,
             extra_params=req.extra_params,
         )
         return {"status": "success", "provider": "GFS", "data": result}
@@ -64,6 +69,7 @@ async def api_download_gfs(req: WeatherDownloadRequest):
 
 
 async def _download_cmems(req: WeatherDownloadRequest):
+    validate_save_path(req.save_path)
     try:
         logger.info(
             "CMEMS download request received: date=%s time=%s category=%s area=%s extra_keys=%s",
@@ -79,6 +85,7 @@ async def _download_cmems(req: WeatherDownloadRequest):
             time=req.time,
             category=req.category,
             area=req.area,
+            save_path=req.save_path,
             extra_params=req.extra_params,
         )
         return {"status": "success", "provider": "CMEMS", "data": result}
@@ -99,6 +106,7 @@ async def api_download_cms_alias(req: WeatherDownloadRequest):
 
 @router.post("/tle")
 async def api_download_tle(req: WeatherDownloadRequest):
+    validate_save_path(req.save_path)
     try:
         result = await run_in_threadpool(
             tle_service.execute,
@@ -106,6 +114,7 @@ async def api_download_tle(req: WeatherDownloadRequest):
             time=req.time,
             category=req.category,
             area=req.area,
+            save_path=req.save_path,
             extra_params=req.extra_params,
         )
         return {"status": "success", "provider": "TLE", "data": result}
@@ -115,6 +124,7 @@ async def api_download_tle(req: WeatherDownloadRequest):
 
 
 async def _download_noaa(req: WeatherDownloadRequest, satellite: str):
+    validate_save_path(req.save_path)
     try:
         result = await run_in_threadpool(
             noaa_service.execute,
@@ -122,6 +132,7 @@ async def _download_noaa(req: WeatherDownloadRequest, satellite: str):
             time=req.time,
             category=req.category,
             area=req.area,
+            save_path=req.save_path,
             extra_params=req.extra_params,
             satellite=satellite,
         )
@@ -155,3 +166,8 @@ async def api_search_satellite_datasets(req: SatelliteDatasetRequest):
     except Exception as e:
         logger.exception("%s satellite dataset search failed", req.satellite)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def validate_save_path(save_path: str):
+    if not str(save_path or "").strip().strip("/\\"):
+        raise HTTPException(status_code=400, detail="Download save path is required.")

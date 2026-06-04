@@ -4,7 +4,7 @@ import urllib.parse
 
 import requests
 import urllib3
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -25,9 +25,12 @@ class DownloadRequest(BaseModel):
 
 @router.post("/request")
 async def download_request(payload: DownloadRequest):
+    if not str(payload.save_path or "").strip().strip("/\\"):
+        raise HTTPException(status_code=400, detail="Download save path is required.")
+
     def generate_download_progress():
         try:
-            final_dir = safe_join(settings.data_raw_dir, payload.save_path)
+            final_dir = safe_join(settings.data_root, payload.save_path)
             final_dir.mkdir(parents=True, exist_ok=True)
 
             parsed_url = urllib.parse.urlparse(payload.url)

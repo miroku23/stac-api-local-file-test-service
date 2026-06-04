@@ -1,0 +1,73 @@
+.download-surface {
+  @apply h-full min-h-0 min-w-0 overflow-hidden rounded-none border-0;
+}
+
+.download-layout {
+  @apply grid h-full min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.provider-tabs {
+  @apply min-w-0 border-b border-slate-200 bg-white px-3 pt-2;
+}
+
+.provider-tabs .p-tablist {
+  @apply bg-transparent;
+}
+
+.provider-tabs .p-tablist-tab-list {
+  @apply gap-1 border-0 bg-transparent;
+}
+
+.provider-tabs .p-tab {
+  @apply relative min-h-10 border-0 bg-transparent px-4 py-0 text-sm font-bold text-slate-500 transition-colors;
+}
+
+.provider-tabs .p-tab:not(.p-disabled):hover {
+  @apply bg-slate-50 text-slate-700;
+}
+
+.provider-tabs .p-tab.p-tab-active {
+  @apply text-emerald-600;
+}
+
+.provider-tabs .p-tablist-active-bar {
+  @apply h-0.5 bg-emerald-500;
+}
+
+.provider-tabs .p-tab::after {
+  content: "";
+  @apply pointer-events-none absolute inset-x-3 bottom-0 h-0.5 bg-transparent transition-colors;
+}
+
+.provider-tabs .p-tab.p-tab-active::after {
+  @apply bg-emerald-500;
+}
+
+.provider-tabs .p-tab.p-tab-active .material-symbols-rounded.icon {
+  font-variation-settings: "FILL" 1, "wght" 650, "GRAD" 0, "opsz" 24;
+}
+
+.download-surface .download-form {
+  @apply grid min-h-0 grid-rows-[minmax(0,1fr)_auto] overflow-hidden;
+}
+
+.download-form-scroll {
+  @apply grid min-h-0 content-start gap-3.5 overflow-y-auto overflow-x-hidden px-3 py-3;
+}
+
+.download-surface .form-section {
+  @apply rounded-none bg-white;
+}
+
+.dataset-dialog {
+  width: min(860px, calc(100vw - 40px));
+}
+
+.dataset-list .p-dataview-content {
+  @apply bg-transparent;
+}
+
+.dataset-item .p-button-label {
+  @apply min-w-0;
+}

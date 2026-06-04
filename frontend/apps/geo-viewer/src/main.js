@@ -4,7 +4,7 @@ import { ViteSSG } from "vite-ssg";
 
 import App from "./App.vue";
 import { store } from "./store";
-import "material-symbols/rounded.css";
+import "@repo/webfonts/material-symbols.css";
 import "./viewer.css";
 import "./styles.css";
 

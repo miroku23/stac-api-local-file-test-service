@@ -1,17 +1,17 @@
-﻿<template>
+<template>
   <section
     @dragover.prevent="handleDragOver"
     @drop.prevent="handleDrop"
   >
     <div class="relative h-full min-h-0">
       <div class="grid h-full min-h-0 grid-rows-[36px_minmax(0,1fr)]">
-        <div class="relative z-30 grid min-h-0 grid-cols-[minmax(0,1fr)_auto] items-center overflow-visible border-b border-[var(--zarr-border)] bg-white">
+        <div class="relative z-30 grid min-h-0 grid-cols-[minmax(0,1fr)_auto] items-center overflow-visible border-b border-slate-200 bg-white">
           <Menubar :model="fileMenuItems" :pt="menubarPt" class="relative z-30 min-h-0 overflow-visible rounded-none border-0 bg-white px-2 py-0 text-sm">
             <template #item="{ item, props, hasSubmenu }">
               <a v-bind="props.action" class="flex items-center gap-2">
-                <i v-if="item.materialIcon" class="material-symbols-rounded icon !text-[18px]">{{ item.materialIcon }}</i>
+                <i v-if="item.materialIcon" class="material-symbols-rounded icon !text-lg">{{ item.materialIcon }}</i>
                 <span>{{ item.label }}</span>
-                <i v-if="hasSubmenu" class="material-symbols-rounded icon ml-auto !text-[18px]">chevron_right</i>
+                <i v-if="hasSubmenu" class="material-symbols-rounded icon ml-auto !text-lg">chevron_right</i>
               </a>
             </template>
           </Menubar>
@@ -30,7 +30,7 @@
         </div>
 
         <div class="app-scroll relative z-0 flex h-full min-h-0 flex-col overflow-hidden">
-          <p v-if="message" class="message border-b border-[var(--zarr-border)] px-3 py-2">{{ message }}</p>
+          <p v-if="message" class="message border-b border-slate-200 px-3 py-2">{{ message }}</p>
 
           <FileUploadPrompt
             v-if="!filePath"
@@ -41,15 +41,15 @@
           />
 
           <EmptyState v-else-if="error" title="Unable to read file" :description="error" />
-          <div v-else-if="selectedInfo" class="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-3 overflow-hidden p-3 text-[13px]">
-            <div class="min-h-0 flex flex-wrap items-center gap-2 border border-[var(--zarr-border)] bg-slate-50/80 px-3 py-2">
-              <span class="font-bold text-[var(--zarr-muted)]">Format</span>
+          <div v-else-if="selectedInfo" class="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-3 overflow-hidden p-3 text-sm">
+            <div class="min-h-0 flex flex-wrap items-center gap-2 border border-slate-200 bg-slate-50/80 px-3 py-2">
+              <span class="font-bold text-slate-500">Format</span>
               <strong>{{ fileInfo.format || fileInfo.extension || "-" }}</strong>
               <span class="mx-1 h-4 border-l border-slate-300"></span>
-              <span class="font-bold text-[var(--zarr-muted)]">Size</span>
+              <span class="font-bold text-slate-500">Size</span>
               <strong>{{ fileInfo.size || "-" }}</strong>
               <span class="mx-1 h-4 border-l border-slate-300"></span>
-              <span class="font-bold text-[var(--zarr-muted)]">Modified</span>
+              <span class="font-bold text-slate-500">Modified</span>
               <strong>{{ formattedModified }}</strong>
             </div>
             <JsonContent v-if="detailType === 'json'" :detail="detail" />
@@ -71,12 +71,13 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useStore } from "vuex";
-import { EmptyState } from "@zarr/ui";
 import Button from "primevue/button";
 import Menubar from "primevue/menubar";
 import ProgressSpinner from "primevue/progressspinner";
+import EmptyState from "../common/EmptyState.vue";
+import FileBrowser from "./Browser.vue";
 import FileUploadPrompt from "./Upload.vue";
 import JsonContent from "./structure/Json.vue";
 import GribContent from "./structure/Grib.vue";
@@ -93,6 +94,7 @@ const props = defineProps({
 
 const emit = defineEmits(["loading"]);
 const store = useStore();
+const windowProvider = inject("windowProvider", null);
 
 const loading = ref(false);
 const selectedInfo = ref(null);
@@ -104,8 +106,6 @@ const activeRequests = new Set();
 const fileInfo = computed(() => selectedInfo.value?.file_info || {});
 const detail = computed(() => selectedInfo.value?.detail || {});
 const detailType = computed(() => detail.value.type || "");
-const selectedPickerFile = computed(() => store.state.file.filePickerSelections[props.windowKey]);
-const selectedStorageFolder = computed(() => store.state.file.storageFolderSelections[props.windowKey]);
 const messages = computed(() => store.getters.messages);
 const dateLocale = computed(() => store.getters.dateLocale);
 
@@ -148,19 +148,6 @@ watch(
   { immediate: true }
 );
 
-watch(selectedPickerFile, (file) => {
-  if (!file) return;
-  setCurrentFile(file);
-  store.dispatch("clearFilePickerSelection", props.windowKey);
-  store.commit("setFilePickerTargetKey", "");
-});
-
-watch(selectedStorageFolder, async (folder) => {
-  if (!folder) return;
-  await saveTempFileToStorage(folder);
-  store.dispatch("clearStorageFolderSelection", props.windowKey);
-});
-
 onBeforeUnmount(() => {
   window.removeEventListener("beforeunload", cleanupCurrentTempFile);
   abortWindowRequests();
@@ -200,11 +187,33 @@ async function loadFile(path) {
 }
 
 function openFilePicker() {
-  store.commit("setFilePickerTargetKey", props.windowKey);
+  openPickerWindow({
+    group: `file-picker:${props.windowKey}`,
+    label: messages.value.common.filePicker,
+    icon: "search",
+    folderOnly: false,
+    events: (dialog) => ({
+      "select-file": (file) => {
+        setCurrentFile(file);
+        windowProvider?.close?.(dialog.key);
+      }
+    })
+  });
 }
 
 function openStoragePicker() {
-  store.commit("setStoragePickerTargetKey", props.windowKey);
+  openPickerWindow({
+    group: `storage-picker:${props.windowKey}`,
+    label: messages.value.common.storagePicker,
+    icon: "drive_folder_upload",
+    folderOnly: true,
+    events: (dialog) => ({
+      "select-folder": async (folder) => {
+        await saveTempFileToStorage(folder);
+        windowProvider?.close?.(dialog.key);
+      }
+    })
+  });
 }
 
 function openLocalFile() {
@@ -212,7 +221,45 @@ function openLocalFile() {
 }
 
 function setCurrentFile(row) {
-  store.dispatch("setFileViewFile", { key: props.windowKey, row });
+  const path = row?.path || "";
+  const fileName = row?.name || path.split("/").pop() || "FileView";
+  if (windowProvider?.patch) {
+    windowProvider.patch(props.windowKey, {
+      filePath: path,
+      fileRoot: row?.root,
+      label: path ? fileName : "FileView",
+      description: path || "Inspect files and conversion details.",
+      message: ""
+    });
+    return;
+  }
+}
+
+function openPickerWindow({ group, label, icon, folderOnly, events }) {
+  if (!windowProvider?.open) return;
+  windowProvider.open(
+    {
+      group,
+      label,
+      icon,
+      description: props.windowKey,
+      width: 1040,
+      height: 720,
+      overlay: true
+    },
+    {
+      content: FileBrowser,
+      contentProps: {
+        selectMode: true,
+        folderOnly,
+        allowCreateFolder: folderOnly
+      },
+      contentEvents: (dialog) => ({
+        ...(typeof events === "function" ? events(dialog) : events),
+        "cancel-select": () => windowProvider.close(dialog.key)
+      })
+    }
+  );
 }
 
 async function selectLocalFile(event) {
@@ -265,13 +312,9 @@ async function saveTempFileToStorage(folder) {
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload.detail || messages.value.upload.saveFailed);
     setCurrentFile(payload);
-    store.commit("setStoragePickerTargetKey", "");
   } catch (err) {
     if (isAbortError(err)) return;
-    store.dispatch("patchWindow", {
-      key: props.windowKey,
-      patch: { message: err.message || messages.value.upload.saveFailed }
-    });
+    windowProvider?.patch?.(props.windowKey, { message: err.message || messages.value.upload.saveFailed });
   } finally {
     finishWindowRequest(controller);
   }

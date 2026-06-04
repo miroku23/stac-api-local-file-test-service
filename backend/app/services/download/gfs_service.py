@@ -4,20 +4,21 @@ from datetime import datetime
 from pathlib import Path
 
 from app.core.config import settings
+from app.core.paths import safe_join
 
 
 class GFSDownloadService:
     def __init__(self):
-        self.base_dir = settings.data_raw_dir
+        self.base_dir = settings.data_root
 
-    def execute(self, date: str, time: str, category: str, area: list, extra_params: dict):
+    def execute(self, date: str, time: str, category: str, area: list, save_path: str = "", extra_params: dict | None = None):
         from herbie import Herbie
 
         extra_params = extra_params or {}
         category = (category or "WIND").upper()
         dt = datetime.strptime(f"{date}{time}", "%Y%m%d%H")
         yyyymm, dd = date[:6], date[6:]
-        target_dir = os.path.join(self.base_dir, "GFS", category, yyyymm, dd)
+        target_dir = os.path.join(safe_join(self.base_dir, save_path), "GFS", category, yyyymm, dd)
 
         search_pattern = self._search_pattern(category, extra_params)
         product = self._product(extra_params)

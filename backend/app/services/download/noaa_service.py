@@ -8,6 +8,7 @@ import earthaccess
 import requests
 
 from app.core.config import settings
+from app.core.paths import safe_join
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -35,7 +36,7 @@ class NOAADownloadService:
         "CLOUD": ["CLOUD"],
     }
 
-    def execute(self, date: str, time: str = "00", category: str = "", area=None, extra_params=None, satellite: str = ""):
+    def execute(self, date: str, time: str = "00", category: str = "", area=None, save_path: str = "", extra_params=None, satellite: str = ""):
         extra_params = extra_params or {}
         satellite_code = self._normalize_satellite(satellite or extra_params.get("satellite"))
         payload = self._normalize_payload(extra_params.get("payload"), satellite_code)
@@ -53,7 +54,7 @@ class NOAADownloadService:
         if resolution not in {"high", "std"}:
             raise ValueError("resolution must be high or std.")
 
-        target_dir = self._target_dir(satellite_code, payload, level, product_type, target_date)
+        target_dir = self._target_dir(satellite_code, payload, level, product_type, target_date, save_path)
         os.makedirs(target_dir, exist_ok=True)
 
         if satellite_code in {"TEMPO", "SENTINEL5P"}:
@@ -293,9 +294,9 @@ class NOAADownloadService:
                 candidates.append(href)
         return candidates[0] if candidates else None
 
-    def _target_dir(self, satellite: str, payload: str, level: str, product_type: str, target_date: datetime) -> str:
+    def _target_dir(self, satellite: str, payload: str, level: str, product_type: str, target_date: datetime, save_path: str = "") -> str:
         return os.path.join(
-            settings.data_raw_dir,
+            safe_join(settings.data_root, save_path),
             "SAT",
             satellite,
             payload,

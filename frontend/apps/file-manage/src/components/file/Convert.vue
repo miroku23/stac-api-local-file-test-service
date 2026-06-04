@@ -1,10 +1,10 @@
-﻿<template>
+<template>
   <section
     @dragover.prevent="handleDragOver"
     @drop.prevent="handleDrop"
   >
     <div class="relative flex h-full min-h-0 flex-col">
-      <p v-if="message" class="message border-b border-[var(--zarr-border)] px-3 py-2">{{ message }}</p>
+      <p v-if="message" class="message border-b border-slate-200 px-3 py-2">{{ message }}</p>
 
       <FileUploadPrompt
         v-if="!filePath"
@@ -16,15 +16,15 @@
 
       <EmptyState v-else-if="error" title="Unable to read file" :description="error" />
 
-      <div v-else-if="selectedInfo" class="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden text-[13px]">
-        <div class="mx-3 mt-3 flex min-h-0 flex-wrap items-center gap-2 border border-[var(--zarr-border)] bg-slate-50/80 px-3 py-2">
-          <span class="font-bold text-[var(--zarr-muted)]">Format</span>
+      <div v-else-if="selectedInfo" class="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden text-sm">
+        <div class="mx-3 mt-3 flex min-h-0 flex-wrap items-center gap-2 border border-slate-200 bg-slate-50/80 px-3 py-2">
+          <span class="font-bold text-slate-500">Format</span>
           <strong>{{ fileInfo.format || fileInfo.extension || "-" }}</strong>
           <span class="mx-1 h-4 border-l border-slate-300"></span>
-          <span class="font-bold text-[var(--zarr-muted)]">Size</span>
+          <span class="font-bold text-slate-500">Size</span>
           <strong>{{ fileInfo.size || "-" }}</strong>
           <span class="mx-1 h-4 border-l border-slate-300"></span>
-          <span class="font-bold text-[var(--zarr-muted)]">Modified</span>
+          <span class="font-bold text-slate-500">Modified</span>
           <strong>{{ formattedModified }}</strong>
         </div>
 
@@ -40,7 +40,13 @@
         </div>
 
         <div class="submit-row">
-          <span class="message">{{ result?.message || messages.convert.resultPending }}</span>
+          <BrowserPath
+            v-model="zarrForm.outputPath"
+            :label="messages.convertSetting.outputPath"
+            :placeholder="defaultOutputPath || messages.convertSetting.outputPlaceholder"
+            :button-label="messages.download.pickFolder"
+            @pick="openStoragePicker"
+          />
           <Button class="primary" :label="messages.convertSetting.run" severity="success" :disabled="!canConvert" :loading="converting" @click="runZarr">
             <template #icon><i class="material-symbols-rounded icon">sync_alt</i></template>
           </Button>
@@ -59,11 +65,13 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import { computed, inject, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { useStore } from "vuex";
-import { EmptyState } from "@zarr/ui";
 import Button from "primevue/button";
 import ProgressSpinner from "primevue/progressspinner";
+import EmptyState from "../common/EmptyState.vue";
+import BrowserPath from "./browser/Path.vue";
+import FileBrowser from "./Browser.vue";
 import ConvertInfo from "./convert/Info.vue";
 import ConvertSetting from "./convert/Setting.vue";
 import FileUploadPrompt from "./Upload.vue";
@@ -81,6 +89,7 @@ const props = defineProps({
 
 const emit = defineEmits(["loading"]);
 const store = useStore();
+const windowProvider = inject("windowProvider", null);
 
 const loading = ref(false);
 const converting = ref(false);
@@ -110,7 +119,6 @@ const zarrForm = reactive({
 
 const fileInfo = computed(() => selectedInfo.value?.file_info || {});
 const detail = computed(() => selectedInfo.value?.detail || {});
-const selectedPickerFile = computed(() => store.state.file.filePickerSelections[props.windowKey]);
 const messages = computed(() => store.getters.messages);
 const dateLocale = computed(() => store.getters.dateLocale);
 const formattedModified = computed(() => {
@@ -126,6 +134,7 @@ const formattedModified = computed(() => {
 const isSupportedFile = computed(() => supportedExtensions.has(String(fileInfo.value.extension || "").toLowerCase()));
 const productOptions = computed(() => buildProductOptions(detail.value));
 const selectedProductPayload = computed(() => selectedProducts.value);
+const defaultOutputPath = computed(() => defaultZarrPath(props.filePath));
 const dimensionSummary = computed(() => collectDimensions(detail.value));
 const maxDimension = computed(() => Math.max(0, ...dimensionSummary.value.map((item) => Number(item.size) || 0)));
 const canConvert = computed(() => isSupportedFile.value && (!productOptions.value.length || selectedProducts.value.length > 0));
@@ -141,13 +150,6 @@ watch(
   },
   { immediate: true }
 );
-
-watch(selectedPickerFile, (file) => {
-  if (!file) return;
-  setCurrentFile(file);
-  store.dispatch("clearFilePickerSelection", props.windowKey);
-  store.commit("setFilePickerTargetKey", "");
-});
 
 watch(productOptions, (items) => {
   selectedProducts.value = items;
@@ -403,7 +405,7 @@ async function loadFile(path) {
   result.value = null;
   currentConvertJobId.value = "";
   localFileMessage.value = "";
-  zarrForm.outputPath = defaultZarrPath(path);
+  zarrForm.outputPath = "";
   if (!path) return;
   const controller = createWindowRequest();
   loading.value = true;
@@ -439,9 +441,28 @@ async function runZarr() {
 function defaultZarrPath(path) {
   const normalized = String(path || "").replace(/^\/+/, "");
   if (!normalized) return "";
-  const relative = normalized.replace(/^(DATA\/|raw\/)/, "");
-  const withoutExtension = relative.replace(/\.[^/.]+$/, "");
+  const withoutExtension = normalized.replace(/\.[^/.]+$/, "");
   return `${withoutExtension}.zarr`;
+}
+
+function zarrFileName(path) {
+  const normalized = String(path || "").replace(/\\/g, "/").replace(/\/+$/, "");
+  return normalized.split("/").filter(Boolean).pop() || "";
+}
+
+function openStoragePicker() {
+  openPickerWindow({
+    group: `storage-picker:${props.windowKey}`,
+    label: messages.value.common.storagePicker,
+    icon: "drive_folder_upload",
+    folderOnly: true,
+    events: (dialog) => ({
+      "select-folder": (folder) => {
+        setOutputFolder(folder);
+        windowProvider?.close?.(dialog.key);
+      }
+    })
+  });
 }
 
 async function runConvert(url, extraPayload) {
@@ -506,11 +527,67 @@ async function runConvert(url, extraPayload) {
 }
 
 function openFilePicker() {
-  store.commit("setFilePickerTargetKey", props.windowKey);
+  openPickerWindow({
+    group: `file-picker:${props.windowKey}`,
+    label: messages.value.common.filePicker,
+    icon: "search",
+    folderOnly: false,
+    events: (dialog) => ({
+      "select-file": (file) => {
+        setCurrentFile(file);
+        windowProvider?.close?.(dialog.key);
+      }
+    })
+  });
 }
 
 function setCurrentFile(row) {
-  store.dispatch("setFileConvertFile", { key: props.windowKey, row });
+  const path = row?.path || "";
+  const fileName = row?.name || path.split("/").pop() || "FileConvert";
+  if (windowProvider?.patch) {
+    windowProvider.patch(props.windowKey, {
+      filePath: path,
+      fileRoot: row?.root,
+      label: path ? fileName : "FileConvert",
+      description: path || "Resample files and convert products to Zarr.",
+      message: ""
+    });
+    return;
+  }
+}
+
+function setOutputFolder(folder) {
+  if (!folder) return;
+  const selectedPath = String(folder.path || "").replace(/^\/+/, "").replace(/\/+$/, "");
+  const fileName = zarrFileName(zarrForm.outputPath) || zarrFileName(defaultZarrPath(props.filePath));
+  zarrForm.outputPath = [selectedPath, fileName].filter(Boolean).join("/");
+}
+
+function openPickerWindow({ group, label, icon, folderOnly, events }) {
+  if (!windowProvider?.open) return;
+  windowProvider.open(
+    {
+      group,
+      label,
+      icon,
+      description: props.windowKey,
+      width: 1040,
+      height: 720,
+      overlay: true
+    },
+    {
+      content: FileBrowser,
+      contentProps: {
+        selectMode: true,
+        folderOnly,
+        allowCreateFolder: folderOnly
+      },
+      contentEvents: (dialog) => ({
+        ...(typeof events === "function" ? events(dialog) : events),
+        "cancel-select": () => windowProvider.close(dialog.key)
+      })
+    }
+  );
 }
 
 async function selectLocalFile(event) {

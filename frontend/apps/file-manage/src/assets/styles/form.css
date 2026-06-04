@@ -1,0 +1,91 @@
+.form-grid {
+  @apply grid grid-cols-2 items-start gap-3;
+}
+
+.field {
+  @apply grid content-start gap-1 text-xs;
+}
+
+.field-check {
+  @apply flex min-h-[38px] items-center gap-2 text-xs;
+}
+
+.field > span,
+.field-check > span {
+  @apply text-xs font-semibold text-slate-500;
+}
+
+.field small {
+  @apply text-xs;
+}
+
+.field .p-select,
+.field .p-inputnumber,
+.field .p-inputtext,
+.field .p-select-label,
+.field .p-inputnumber-input,
+.field .p-inputtext {
+  @apply text-xs;
+}
+
+.field .p-select-label,
+.field .p-inputnumber-input,
+.field .p-inputtext {
+  @apply py-2;
+}
+
+.full {
+  @apply col-span-full;
+}
+
+.form-section {
+  @apply grid gap-3.5 rounded-lg border border-slate-200 bg-slate-50/70 p-3;
+}
+
+.section-title {
+  @apply flex items-baseline justify-between gap-3;
+}
+
+.section-title h2 {
+  @apply m-0 text-sm;
+}
+
+.section-title span,
+.section-note,
+.header-note {
+  @apply text-sm text-slate-500;
+}
+
+.header-note,
+.section-note {
+  @apply m-0 mt-1;
+}
+
+.section-actions {
+  @apply inline-flex items-center gap-2;
+}
+
+.preset-row {
+  @apply flex flex-wrap gap-2;
+}
+
+.area-grid {
+  grid-template-areas:
+    ". north ."
+    "west . east"
+    ". south .";
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.north { grid-area: north; }
+.west { grid-area: west; }
+.east { grid-area: east; }
+.south { grid-area: south; }
+
+.submit-row {
+  @apply flex items-center justify-between gap-3 border-t border-slate-200 bg-white px-3 py-3;
+}
+
+.submit-row .primary {
+  @apply min-w-40;
+}

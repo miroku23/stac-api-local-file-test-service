@@ -1,0 +1,22 @@
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#app {
+  @apply m-0 min-h-full min-w-80;
+}
+
+body {
+  @apply overflow-hidden bg-slate-900 text-sm;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.ui-font-en {
+  font-family: "Noto Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+.ui-font-ko {
+  font-family: "Noto Sans KR", "Noto Sans", ui-sans-serif, system-ui, sans-serif;
+}

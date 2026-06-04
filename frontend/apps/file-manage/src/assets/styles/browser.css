@@ -1,0 +1,23 @@
+.file-browser-table .p-datatable-table-container {
+  @apply h-full;
+}
+
+.file-browser-table .p-datatable-thead > tr > th {
+  @apply border-b border-slate-100 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500;
+}
+
+.file-browser-table .p-datatable-tbody > tr > td {
+  @apply border-0 px-3 py-2;
+}
+
+.file-browser-table .file-browser-row {
+  @apply cursor-default;
+}
+
+.file-browser-table .file-browser-row:hover {
+  @apply bg-sky-50;
+}
+
+.file-browser-table .p-datatable-tbody > tr.p-datatable-row-selected > td {
+  @apply bg-sky-100;
+}

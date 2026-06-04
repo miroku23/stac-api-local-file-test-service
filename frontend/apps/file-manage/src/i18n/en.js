@@ -20,6 +20,7 @@ export const en = {
   },
   browser: {
     createShortcut: "Create shortcut",
+    deleteShortcut: "Delete shortcut",
     viewFile: "View file",
     convertFile: "Convert file",
     currentPath: "Current path",
@@ -126,7 +127,7 @@ export const en = {
     selectAll: "Select all",
     clearAll: "Clear all",
     outputPath: "Output path",
-    outputPlaceholder: "e.g. folder/name.zarr",
+    outputPlaceholder: "Defaults to the source data path with .zarr",
     result: "Result",
     run: "Run Zarr conversion",
     options: {
@@ -151,6 +152,10 @@ export const en = {
     area: "Area",
     variables: "Variables",
     selectedCount: (count) => `${count} selected`,
+    savePath: "Save path",
+    savePathPlaceholder: "Destination folder under the local storage root",
+    savePathRequired: "Select or enter a download save path.",
+    pickFolder: "Select folder",
     readyMessage: "Review the settings and start the download.",
     datasetEmpty: "No datasets found.",
     datasetFetchFailed: "Failed to fetch dataset list.",

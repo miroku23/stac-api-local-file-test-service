@@ -1,11 +1,11 @@
-﻿<template>
+<template>
   <section class="surface download-surface h-full min-h-0 overflow-hidden">
     <div class="download-layout">
       <Tabs v-model:value="activeProvider" class="provider-tabs shrink-0">
         <TabList>
           <Tab v-for="provider in providers" :key="provider.key" :value="provider.key">
             <span class="inline-flex min-w-0 items-center gap-2">
-              <i class="material-symbols-rounded icon !text-[18px]">{{ providerIcon(provider.key) }}</i>
+              <i class="material-symbols-rounded icon text-lg">{{ providerIcon(provider.key) }}</i>
               <span class="truncate">{{ provider.key }}</span>
             </span>
           </Tab>
@@ -38,10 +38,15 @@
         </div>
 
         <div class="submit-row">
-          <Message :severity="messageSeverity" size="small" class="!m-0 !flex-1">
-            {{ message || downloadText.readyMessage }}
-          </Message>
-          <Button class="primary" :loading="loading" type="submit" :label="downloadText.downloadButton">
+          <BrowserPath
+            v-model="form.savePath"
+            :label="downloadText.savePath"
+            :placeholder="downloadText.savePathRequired"
+            :button-label="downloadText.pickFolder"
+            :invalid="savePathTouched && !hasSavePath"
+            @pick="openStoragePicker"
+          />
+          <Button class="primary" :loading="loading" :disabled="!hasSavePath" type="submit" :label="downloadText.downloadButton">
             <template #icon><i class="material-symbols-rounded icon">download</i></template>
           </Button>
         </div>
@@ -52,7 +57,7 @@
       <template #header>
         <div class="grid gap-1">
           <h2 class="m-0 text-base">Earthdata Datasets</h2>
-          <span class="text-xs text-[var(--zarr-muted)]">{{ activeProvider }} / {{ form.category }} / {{ form.detail || "L2" }}</span>
+          <span class="text-xs text-slate-500">{{ activeProvider }} / {{ form.category }} / {{ form.detail || "L2" }}</span>
         </div>
       </template>
 
@@ -71,13 +76,13 @@
               text
               severity="secondary"
               class="dataset-item !justify-start !rounded-md !border !px-3 !py-2 !text-left"
-              :class="dataset.short_name === form.datasetShortName ? '!border-[var(--zarr-accent)] !bg-cyan-50' : '!border-[var(--zarr-border)] !bg-slate-50'"
+              :class="dataset.short_name === form.datasetShortName ? '!border-emerald-500 !bg-cyan-50' : '!border-slate-200 !bg-slate-50'"
               @click="selectDataset(dataset)"
             >
               <span class="grid min-w-0 gap-1">
                 <strong class="truncate text-sm text-slate-800">{{ dataset.short_name || dataset.entry_title }}</strong>
-                <span class="truncate text-xs text-[var(--zarr-muted)]">{{ dataset.entry_title }}</span>
-                <small class="truncate text-xs text-[var(--zarr-muted)]">{{ compactDatasetMeta(dataset).join(" / ") }}</small>
+                <span class="truncate text-xs text-slate-500">{{ dataset.entry_title }}</span>
+                <small class="truncate text-xs text-slate-500">{{ compactDatasetMeta(dataset).join(" / ") }}</small>
               </span>
             </Button>
           </div>
@@ -88,7 +93,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch } from "vue";
+import { computed, inject, reactive, ref, watch } from "vue";
 import { useStore } from "vuex";
 import Button from "primevue/button";
 import DataView from "primevue/dataview";
@@ -105,11 +110,14 @@ import CMEMSForm from "./download/form/CMEMS.vue";
 import TEMPOForm from "./download/form/TEMPO.vue";
 import SENTINEL5PForm from "./download/form/SENTINEL5P.vue";
 import TLEForm from "./download/form/TLE.vue";
+import FileBrowser from "./Browser.vue";
+import BrowserPath from "./browser/Path.vue";
 
 const API_BASE = __API_BASE__;
 const SURFACE_DEPTH = 0.49402499198913574;
 const { cloneDeep, compact, find, map, range } = lodash;
 const store = useStore();
+const windowProvider = inject("windowProvider", null);
 const messages = computed(() => store.getters.messages);
 const downloadText = computed(() => messages.value.download);
 
@@ -271,7 +279,6 @@ const datasetMessage = ref("");
 const datasetMessageType = ref("info");
 const datasetResults = ref([]);
 const form = reactive(cloneDeep(providerDefaults.GFS));
-
 const satelliteDownloadProviders = new Set(["TEMPO", "SENTINEL5P"]);
 const isSatelliteDownload = computed(() => satelliteDownloadProviders.has(activeProvider.value));
 const activeProviderForm = computed(() => providerForms[activeProvider.value] || GFSForm);
@@ -317,14 +324,12 @@ const requestSummary = computed(() => compact([
   selectedDetailLabel.value,
   showResolution.value ? find(currentResolutionOptions.value, { value: form.resolution })?.label || form.resolution : ""
 ]).join(" / "));
-const messageSeverity = computed(() => {
-  if (messageType.value === "error") return "error";
-  if (messageType.value === "success") return "success";
-  return "secondary";
-});
-
+const hasSavePath = computed(() => Boolean(normalizePath(form.savePath)));
+const savePathTouched = ref(false);
 watch(activeProvider, (provider) => {
+  const savePath = form.savePath;
   Object.assign(form, cloneDeep(providerDefaults[provider]));
+  form.savePath = savePath;
   syncDependentFields();
   message.value = "";
   messageType.value = "info";
@@ -335,7 +340,6 @@ watch(() => form.category, () => {
   syncDependentFields();
 });
 watch(() => form.detail, resetDatasetSelection);
-
 function baseForm(overrides = {}) {
   return {
     date: dayjs().toDate(),
@@ -353,6 +357,7 @@ function baseForm(overrides = {}) {
     datasetTitle: "",
     minimumDepth: SURFACE_DEPTH,
     maximumDepth: SURFACE_DEPTH,
+    savePath: "",
     ...overrides
   };
 }
@@ -480,7 +485,45 @@ function selectDataset(dataset) {
   datasetLayerOpen.value = false;
 }
 
+function openStoragePicker() {
+  savePathTouched.value = true;
+  if (!windowProvider?.open) return;
+  windowProvider.open(
+    {
+      group: "storage-picker:downloads",
+      label: downloadText.value.savePath,
+      icon: "drive_folder_upload",
+      description: "downloads",
+      width: 1040,
+      height: 720,
+      overlay: true
+    },
+    {
+      content: FileBrowser,
+      contentProps: {
+        selectMode: true,
+        folderOnly: true,
+        allowCreateFolder: true
+      },
+      contentEvents: (dialog) => ({
+        "select-folder": (folder) => {
+          savePathTouched.value = true;
+          form.savePath = String(folder.path || "").replace(/^\/+/, "");
+          windowProvider.close(dialog.key);
+        },
+        "cancel-select": () => windowProvider.close(dialog.key)
+      })
+    }
+  );
+}
+
 async function submit() {
+  savePathTouched.value = true;
+  if (!hasSavePath.value) {
+    messageType.value = "error";
+    message.value = downloadText.value.savePathRequired;
+    return;
+  }
   loading.value = true;
   message.value = "";
   messageType.value = "info";
@@ -489,6 +532,7 @@ async function submit() {
     date: dateText("YYYYMMDD"),
     time: form.time,
     category: form.category,
+    save_path: normalizePath(form.savePath),
     area: [Number(form.n), Number(form.w), Number(form.s), Number(form.e)],
     extra_params: buildExtraParams()
   };
@@ -503,14 +547,15 @@ async function submit() {
     if (!response.ok) throw new Error(data.detail || downloadText.value.downloadFailed);
     messageType.value = "success";
     message.value = downloadText.value.completed(data.data?.file_name);
-    store.commit("setLastDownload", data.data || null);
-    store.dispatch("pushNotification", { type: "success", message: message.value });
   } catch (error) {
     messageType.value = "error";
     message.value = error.message;
-    store.dispatch("pushNotification", { type: "error", message: error.message });
   } finally {
     loading.value = false;
   }
+}
+
+function normalizePath(path) {
+  return String(path || "").replace(/^\/+/, "").trim();
 }
 </script>

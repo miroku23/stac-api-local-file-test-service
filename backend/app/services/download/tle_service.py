@@ -6,6 +6,7 @@ from urllib.parse import quote
 import requests
 
 from app.core.config import settings
+from app.core.paths import safe_join
 
 VALID_TLE_GROUPS = {"GK2", "TEMPO", "SENTINEL5P"}
 SAFE_FILE_CODE = re.compile(r"^[A-Z0-9_-]+$")
@@ -13,9 +14,9 @@ SAFE_FILE_CODE = re.compile(r"^[A-Z0-9_-]+$")
 
 class TLEDownloadService:
     def __init__(self):
-        self.base_dir = settings.data_raw_dir
+        self.base_dir = settings.data_root
 
-    def execute(self, date: str, time: str = "00", category: str = "GK2", area=None, extra_params=None):
+    def execute(self, date: str, time: str = "00", category: str = "GK2", area=None, save_path: str = "", extra_params=None):
         extra_params = extra_params or {}
         tle_group = str(category or extra_params.get("category") or "").strip().upper()
         tle_name = str(extra_params.get("name") or "").strip()
@@ -37,7 +38,7 @@ class TLEDownloadService:
         start = dt.strftime("%Y-%m-%d")
         end = extra_params.get("end_date") or (dt + timedelta(days=1)).strftime("%Y-%m-%d")
         yyyymm, dd = date[:6], date[6:]
-        target_dir = os.path.join(self.base_dir, "TLE", tle_group, yyyymm, dd)
+        target_dir = os.path.join(safe_join(self.base_dir, save_path), "TLE", tle_group, yyyymm, dd)
         os.makedirs(target_dir, exist_ok=True)
 
         file_name = f"{satellite_code}_TLE_{date}.txt"

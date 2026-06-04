@@ -1,0 +1,26 @@
+.app-scroll {
+  scrollbar-color: #a8b7c7 transparent;
+  scrollbar-width: thin;
+}
+
+.app-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.app-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-scroll::-webkit-scrollbar-thumb {
+  background: #a8b7c7;
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+}
+
+.app-scroll::-webkit-scrollbar-thumb:hover {
+  background: #7f91a6;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}

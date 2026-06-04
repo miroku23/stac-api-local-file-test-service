@@ -13,7 +13,7 @@ class StacCatalogRequest(BaseModel):
 
 
 @router.post("/catalog")
-async def create_stac_catalog(req: StacCatalogRequest):
+async def register_stac_item(req: StacCatalogRequest):
     try:
         return await run_in_threadpool(stac_catalog_service.create_item, req.path, req.source)
     except FileNotFoundError as e:
@@ -21,4 +21,4 @@ async def create_stac_catalog(req: StacCatalogRequest):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"STAC catalog generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"STAC item registration failed: {str(e)}")

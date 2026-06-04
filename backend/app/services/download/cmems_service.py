@@ -10,6 +10,7 @@ import numpy as np
 import xarray as xr
 
 from app.core.config import settings
+from app.core.paths import safe_join
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -67,9 +68,9 @@ class CMEMSDownloadService:
     }
 
     def __init__(self):
-        self.base_dir = settings.data_raw_dir
+        self.base_dir = settings.data_root
 
-    def execute(self, date: str, time: str, category: str, area: list, extra_params: dict):
+    def execute(self, date: str, time: str, category: str, area: list, save_path: str = "", extra_params: dict | None = None):
         extra_params = extra_params or {}
         category = (category or "CURRENT").upper()
         dataset_config = self._get_dataset_config(category)
@@ -87,7 +88,7 @@ class CMEMSDownloadService:
         min_depth, max_depth = self._normalize_depth(extra_params, dataset_config)
 
         yyyymm, dd = date[:6], date[6:]
-        target_dir = os.path.join(self.base_dir, "CMEMS", "CURRENT", yyyymm, dd)
+        target_dir = os.path.join(safe_join(self.base_dir, save_path), "CMEMS", "CURRENT", yyyymm, dd)
         os.makedirs(target_dir, exist_ok=True)
 
         variable_tag = "-".join(selected_variables)

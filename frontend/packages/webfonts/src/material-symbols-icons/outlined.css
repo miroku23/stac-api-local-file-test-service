@@ -1,0 +1,5 @@
+@import "material-symbols/outlined.css";
+
+.material-symbols-outlined.filled {
+  font-variation-settings: "FILL" 1;
+}

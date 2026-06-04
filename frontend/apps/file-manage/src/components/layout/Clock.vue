@@ -1,6 +1,6 @@
 <template>
   <div class="ml-auto flex h-full min-w-48 flex-none items-center justify-end gap-2 text-xs font-semibold leading-none">
-    <i class="material-symbols-rounded icon !text-[18px] !leading-none">cloud_done</i>
+    <i class="material-symbols-rounded icon !text-lg !leading-none">cloud_done</i>
     <span class="flex h-full items-center px-2 leading-none">{{ clockText }}</span>
   </div>
 </template>

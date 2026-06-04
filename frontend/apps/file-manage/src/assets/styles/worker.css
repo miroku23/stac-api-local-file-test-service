@@ -1,0 +1,51 @@
+.worker-queue .p-dataview-content {
+  @apply bg-transparent;
+}
+
+.worker-tabs .p-tablist {
+  @apply border-b border-slate-200 bg-white px-2 pt-1;
+}
+
+.worker-tabs .p-tablist-tab-list {
+  @apply gap-1 border-0 bg-transparent;
+}
+
+.worker-tabs .p-tab {
+  @apply h-10 rounded-none border-0 px-3 py-0 text-sm font-semibold text-slate-500;
+}
+
+.worker-tabs .p-tab:not(.p-disabled):hover {
+  @apply bg-slate-50 text-slate-800;
+}
+
+.worker-tabs .p-tab.p-tab-active {
+  @apply bg-transparent text-slate-950;
+}
+
+.worker-tabs .p-tablist-active-bar {
+  @apply hidden;
+}
+
+.worker-tabs .p-tabpanels {
+  @apply bg-white p-0;
+}
+
+.worker-tabs .p-tab.p-tab-active::after {
+  @apply absolute bottom-0 left-0 h-0.5 w-full bg-slate-950 content-[''];
+}
+
+.worker-tab-label {
+  @apply inline-flex min-w-0 items-center gap-2;
+}
+
+.worker-tab-label .material-symbols-rounded.icon {
+  @apply grid h-6 w-6 place-items-center rounded-full bg-sky-100 text-sm text-sky-700;
+}
+
+.worker-tabs .p-tab.p-tab-active .worker-tab-label .material-symbols-rounded.icon {
+  @apply bg-emerald-100 text-emerald-700;
+}
+
+.worker-tab-label .p-badge {
+  @apply h-5 min-w-5 px-1 text-xs font-bold;
+}

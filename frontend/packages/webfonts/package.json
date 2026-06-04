@@ -1,0 +1,25 @@
+{
+  "name": "@repo/webfonts",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    "./styles.css": "./src/styles.css",
+    "./noto-sans.css": "./src/noto-sans/noto-sans.css",
+    "./noto-sans-kr.css": "./src/noto-sans/noto-sans-kr.css",
+    "./noto-sans/noto-sans.css": "./src/noto-sans/noto-sans.css",
+    "./noto-sans/noto-sans-kr.css": "./src/noto-sans/noto-sans-kr.css",
+    "./material-symbols.css": "./src/material-symbols-icons/rounded.css",
+    "./material-symbols/rounded.css": "./src/material-symbols-icons/rounded.css",
+    "./material-symbols/outlined.css": "./src/material-symbols-icons/outlined.css",
+    "./material-symbols/sharp.css": "./src/material-symbols-icons/sharp.css"
+  },
+  "sideEffects": [
+    "./src/**/*.css"
+  ],
+  "dependencies": {
+    "@fontsource/noto-sans": "^5.2.10",
+    "@fontsource/noto-sans-kr": "^5.2.9",
+    "material-symbols": "^0.44.6"
+  }
+}

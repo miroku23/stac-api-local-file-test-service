@@ -1,0 +1,20 @@
+@layer tailwind-base, primevue, tailwind-utilities;
+
+@import "tailwindcss/theme.css" layer(tailwind-base);
+@import "tailwindcss/preflight.css" layer(tailwind-base);
+@import "@repo/webfonts/noto-sans.css" layer(tailwind-base);
+@import "@repo/webfonts/noto-sans-kr.css" layer(tailwind-base);
+@import "@repo/webfonts/material-symbols/rounded.css" layer(tailwind-base);
+@import "@repo/ui/styles.css";
+@import "tailwindcss/utilities.css" layer(tailwind-utilities);
+
+@import "./base.css";
+@import "./layout.css";
+@import "./surface.css";
+@import "./form.css";
+@import "./metadata.css";
+@import "./worker.css";
+@import "./download.css";
+@import "./browser.css";
+@import "./scroll.css";
+@import "./breakpoint.css";

@@ -1,0 +1,19 @@
+{
+  "name": "@repo/i18n",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./messages/en.json": "./messages/en.json",
+    "./messages/en.properties": "./messages/en.properties",
+    "./messages/ko.json": "./messages/ko.json",
+    "./messages/ko.properties": "./messages/ko.properties",
+    "./primevue/en.json": "./primevue/en.json",
+    "./primevue/ko.json": "./primevue/ko.json"
+  },
+  "dependencies": {
+    "properties": "^1.2.1"
+  }
+}

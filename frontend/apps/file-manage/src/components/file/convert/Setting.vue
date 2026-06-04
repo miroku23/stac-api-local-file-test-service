@@ -30,12 +30,12 @@
           <label v-if="form.pyramid" class="field">
             <span>{{ text.minLevel }}</span>
             <InputNumber v-model="form.levelMin" :min="report.strategy.minLevel" :max="form.levelMax" show-buttons fluid />
-            <small class="text-[var(--zarr-muted)]">{{ text.minLevelHelp }}</small>
+            <small class="text-slate-500">{{ text.minLevelHelp }}</small>
           </label>
           <label v-if="form.pyramid" class="field">
             <span>{{ text.maxLevel }}</span>
             <InputNumber v-model="form.levelMax" :min="form.levelMin" :max="report.strategy.maxLevel" show-buttons fluid />
-            <small class="text-[var(--zarr-muted)]">{{ text.maxLevelHelp(report.strategy.suggestedMaxLevel, report.strategy.minLevel, report.strategy.maxLevel) }}</small>
+            <small class="text-slate-500">{{ text.maxLevelHelp(report.strategy.suggestedMaxLevel, report.strategy.minLevel, report.strategy.maxLevel) }}</small>
           </label>
           <label class="field">
             <span>Consolidated metadata</span>
@@ -78,20 +78,15 @@
               </div>
             </template>
           </Listbox>
-          <span v-else class="text-xs text-[var(--zarr-muted)]">{{ text.noFields }}</span>
+          <span v-else class="text-xs text-slate-500">{{ text.noFields }}</span>
           <div v-if="productOptions.length" class="mt-2 flex justify-between gap-2">
-            <span class="text-xs text-[var(--zarr-muted)]">{{ text.selectedCount(selectedProductsModel.length, productOptions.length) }}</span>
+            <span class="text-xs text-slate-500">{{ text.selectedCount(selectedProductsModel.length, productOptions.length) }}</span>
             <div class="flex gap-2">
               <Button text size="small" :label="text.selectAll" class="!px-0" @click="selectedProductsModel = [...productOptions]" />
               <Button text size="small" :label="text.clearAll" severity="secondary" class="!px-0" @click="selectedProductsModel = []" />
             </div>
           </div>
         </Fieldset>
-
-        <label class="field">
-          <span>{{ text.outputPath }}</span>
-          <InputText v-model="form.outputPath" class="w-full" :placeholder="text.outputPlaceholder" />
-        </label>
 
         <Fieldset :legend="text.result">
           <pre class="min-h-24 overflow-auto whitespace-pre-wrap rounded border border-slate-200 bg-slate-950 p-3 text-xs text-slate-100">{{ resultText }}</pre>
@@ -108,7 +103,6 @@ import { useStore } from "vuex";
 import Checkbox from "primevue/checkbox";
 import Fieldset from "primevue/fieldset";
 import InputNumber from "primevue/inputnumber";
-import InputText from "primevue/inputtext";
 import Listbox from "primevue/listbox";
 import Select from "primevue/select";
 
